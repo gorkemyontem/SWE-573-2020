@@ -3,7 +3,7 @@ import os
 import environ
 
 env = environ.Env()
-ENV_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + '\.env'
+ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
 environ.Env.read_env(ENV_DIR)
 
 class RedditAuth:
