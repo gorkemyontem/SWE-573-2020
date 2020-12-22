@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\gorkem\\AppData\\Local\\Programs\\Python\\Python37\\python.exe"
+    "python.pythonPath": "venv/bin/python",
+    "python.linting.pylintPath": "venv/bin/pylint"
 }
