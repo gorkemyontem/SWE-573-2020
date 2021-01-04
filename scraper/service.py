@@ -1,4 +1,5 @@
 import praw
+from prawcore import NotFound
 import os
 import environ
 from django.core.serializers.python import Serializer
@@ -34,49 +35,99 @@ class RedditAuth:
 
 
 class ScrapperService:
+
     @staticmethod
-    def search_subreddit(searchText, limit):
-        # todo searchtext yoksa eger??
+    def subreddit_all(limit):
         try:
             reddit = RedditAuth.public_auth()
-            subredditRes = reddit.subreddit(searchText) # API REQUEST
-            subreddit = ScrapperService.save_subreddit(subredditRes)
-            pprint.pprint(vars(subredditRes))
+
+            allSubmissions = reddit.subreddit('all') # API REQUEST
+           
+            print(20*'=' + " hot " + 20*'=')
+            hotSubmissions = allSubmissions.hot(limit=limit)
+            ScrapperService.save_subreddit_tree(None, hotSubmissions)
+
+            print(20*'=' + " new " + 20*'=')
+            newSubmissions = allSubmissions.new(limit=limit)
+            ScrapperService.save_subreddit_tree(None, newSubmissions)
+
+            # print(20*'=' + " controversial " + 20*'=')
+            # controversialSubmissions = allSubmissions.controversial(limit=limit)
+            # ScrapperService.save_subreddit_tree(None, controversialSubmissions)
+
+            print(20*'=' + " top " + 20*'=')
+            topSubmissions = allSubmissions.top(limit=limit)
+            ScrapperService.save_subreddit_tree(None, topSubmissions)
             
-            # print(20*'=' + " hot")
-            # hot100submissions = subredditRes.hot(limit=limit)
-            # ScrapperService.save_subreddit_tree(subreddit, hot100submissions)
-
-            # print(20*'=' + " new")
-            # new100submissions = subredditRes.new(limit=limit)
-            # ScrapperService.save_subreddit_tree(subreddit, new100submissions)
-
-            print(20*'=' + " controversial")
-            controversial100submissions = subredditRes.controversial(limit=limit)
-            ScrapperService.save_subreddit_tree(subreddit, controversial100submissions)
-
-            print(20*'=' + " top")
-            top100submissions = subredditRes.top(limit=limit)
-            ScrapperService.save_subreddit_tree(subreddit, top100submissions)
-
-            # print(20*'=' + " gilded")
-            # gilded100submissions = subredditRes.gilded(limit=limit)
-            # ScrapperService.save_subreddit_tree(subreddit, gilded100submissions)
-
         except Exception as e:
-            print("Oops!  Try again..." + str(e))
+            print("Oops! [subreddit_all] Try again..." + str(e))
 
     @staticmethod
-    def save_subreddit_tree(subreddit, submissions):
+    def subreddit_lookup_ondemand(searchText, limit):
+        try:
+            reddit = RedditAuth.public_auth()
+
+            if not ScrapperService.subreddit_exists(reddit, searchText):
+                return False
+
+            subredditRes = reddit.subreddit(searchText) # API REQUEST
+            subreddit = ScrapperService.save_subreddit(subredditRes)
+            # pprint.pprint(vars(subredditRes))
+            
+            print(20*'=' + " hot " + 20*'=')
+            hotSubmissions = subredditRes.hot(limit=limit)
+            ScrapperService.save_subreddit_tree(subreddit, hotSubmissions, True)
+
+            print(20*'=' + " new " + 20*'=')
+            newSubmissions = subredditRes.new(limit=limit)
+            ScrapperService.save_subreddit_tree(subreddit, newSubmissions, True)
+
+            print(20*'=' + " controversial " + 20*'=')
+            controversialSubmissions = subredditRes.controversial(limit=limit)
+            ScrapperService.save_subreddit_tree(subreddit, controversialSubmissions, True)
+
+            print(20*'=' + " top " + 20*'=')
+            topSubmissions = subredditRes.top(limit=limit)
+            ScrapperService.save_subreddit_tree(subreddit, topSubmissions, True)
+            
+            return True
+
+        except Exception as e:
+            print("Oops! [subreddit_lookup_ondemand] Try again..." + str(e))
+            return False
+
+    @staticmethod
+    def subreddit_exists(reddit, sub):
+        exists = True
+        try:
+            reddit.subreddits.search_by_name(sub, exact=True)
+        except NotFound:
+            exists = False
+        return exists
+
+    @staticmethod
+    def save_subreddit_tree(subreddit, submissions, includeComments = False):
         try:
             for submissionRes in submissions:
+                if subreddit is None:
+                    subreddit = ScrapperService.save_subreddit(submissionRes.subreddit)
+                
+                print(submissionRes.name)
                 if(not hasattr(submissionRes, 'author') or not hasattr(submissionRes.author, 'id')):
                     continue
+
                 redditor = ScrapperService.save_author(submissionRes.author) 
-                submission = ScrapperService.save_submission(submissionRes, redditor) 
-                # submissionRes.comments.replace_more(limit=None)
-                # for commentRes in submissionRes.comments.list():
-                #     comment = ScrapperService.save_comment(commentRes, subreddit, submission, redditor) 
+                submission = ScrapperService.save_submission(submissionRes, subreddit, redditor) 
+                if includeComments:
+                    submissionRes.comments.replace_more(limit=1)
+                    print(len(submissionRes.comments.list()))
+                    for commentRes in submissionRes.comments.list():
+                        if(not hasattr(commentRes, 'author') or not hasattr(commentRes.author, 'id')):
+                            continue
+
+                        if(commentRes.author is not None):
+                            commentRedditor = ScrapperService.save_author(commentRes.author) 
+                            comment = ScrapperService.save_comment(commentRes, subreddit, submission, commentRedditor) 
         except Exception as e:
             print("Oops [save_subreddit_tree]!  Try again..." + str(e))
 
@@ -87,7 +138,7 @@ class ScrapperService:
             print("====== exist subreddit ======")
             return subreddit
         except Subreddit.DoesNotExist:
-            print("====== DoesNotExist subreddit ======")
+            print("====== NEW SUBREDDIT ======")
             subreddit = Subreddit()
             subreddit.subreddit_id = subredditRes.id
             subreddit.name  = subredditRes.name
@@ -95,6 +146,14 @@ class ScrapperService:
             subreddit.description  = Truncator(subredditRes.description).chars(4999)
             subreddit.description_html  = Truncator(subredditRes.description_html).chars(4999)
             subreddit.subscribers  = subredditRes.subscribers
+            subreddit.lang = subredditRes.lang
+            subreddit.over18 = subredditRes.over18
+            subreddit.subreddit_type = subredditRes.subreddit_type
+            subreddit.quarantine = subredditRes.quarantine
+            subreddit.restrict_commenting = subredditRes.restrict_commenting
+            subreddit.restrict_posting = subredditRes.restrict_posting
+            subreddit.title = subredditRes.title
+            subreddit.url = subredditRes.url
             subreddit.created_utc = datetime.fromtimestamp(subredditRes.created_utc, tz=timezone.utc)
             subreddit.save()
             return subreddit
@@ -110,12 +169,16 @@ class ScrapperService:
             redditor = AuthorRedditor()
             redditor.redditor_id = authorRes.id                                   
             redditor.name = authorRes.name                                   
+            redditor.comment_karma = authorRes.comment_karma
+            redditor.link_karma = authorRes.link_karma
+            redditor.total_karma = authorRes.total_karma
+            redditor.verified = authorRes.verified
             redditor.created_utc = datetime.fromtimestamp(authorRes.created_utc, tz=timezone.utc)                                  
             redditor.save()
             return redditor
 
     @staticmethod
-    def save_submission(submissionRes, redditor):
+    def save_submission(submissionRes, subreddit, redditor):
         # obj, created = AuthorRedditor.objects.get_or_create(first_name='John', last_name='Lennon')
         try:
             submission = Submission.objects.get(submission_id=submissionRes.id)
@@ -124,6 +187,7 @@ class ScrapperService:
         except Submission.DoesNotExist:
             print("====== DoesNotExist submision ======")
             submission = Submission()
+            submission.subreddit = subreddit
             submission.redditor = redditor
             submission.submission_id = submissionRes.id
             submission.name = submissionRes.name
@@ -133,19 +197,21 @@ class ScrapperService:
             submission.num_comments = submissionRes.num_comments
             submission.score = submissionRes.score
             submission.upvote_ratio = submissionRes.upvote_ratio
+            submission.downs = submissionRes.downs
+            submission.ups = submissionRes.ups
+            submission.archived = submissionRes.archived
+            submission.over_18 = submissionRes.over_18
+            submission.permalink = submissionRes.permalink
+            submission.category = submissionRes.category
+            submission.comment_sort = submissionRes.comment_sort
+            submission.content_categories = submissionRes.content_categories
+            submission.discussion_type = submissionRes.discussion_type
             submission.created_utc =  datetime.fromtimestamp(submissionRes.created_utc, tz=timezone.utc)
-            if hasattr(submissionRes, 'link_flair_template_id'):
-                submission.link_flair_template_id = submissionRes.link_flair_template_id
             if hasattr(submissionRes, 'link_flair_text'):
                 submission.link_flair_text = submissionRes.link_flair_text
             submission.save()
             return submission
                         
-            # if hasattr(submissionRes, 'ups'):
-            #     print(submissionRes.ups)
-            # if hasattr(submissionRes, 'downs'):
-            #     print(submissionRes.downs)
-
     @staticmethod
     def save_comment(commentRes, subreddit, submission, redditor):
         try:
@@ -159,55 +225,28 @@ class ScrapperService:
             comment.subreddit = subreddit
             comment.submission = submission
             comment.redditor = redditor
+            comment.name = commentRes.name
+            comment.permalink = commentRes.permalink
+            comment.link_id = commentRes.link_id
             comment.parent_id = commentRes.parent_id
             comment.body = Truncator(commentRes.body).chars(4999)
             comment.body_html = Truncator(commentRes.body_html).chars(4999)
             comment.is_submitter = commentRes.is_submitter
             comment.score = commentRes.score
+            comment.ups = commentRes.ups
+            comment.downs = commentRes.downs
+            comment.depth = commentRes.depth
+            comment.controversiality = commentRes.controversiality
+            comment.archived = commentRes.archived
+            comment.comment_type = commentRes.comment_type
             comment.created_utc = datetime.fromtimestamp(commentRes.created_utc, tz=timezone.utc)
             comment.save()
             return comment
  
-## reddit.subreddit('all').search('url:"https://google.com"')
-# for subreddit in reddit.subreddits.default(limit=None):
-#     print(subreddit)
 
-##### PRINTING
-# import pprint
 
-# # assume you have a Reddit instance bound to variable `reddit`
+##### SINGLES
 # submission = reddit.submission(id="39zje0")
-# print(submission.title) # to make it non-lazy
-# pprint.pprint(vars(submission))
-
-
-
-
-##### SUBMISSION
-# # assume you have a Reddit instance bound to variable `reddit`
-# submission = reddit.submission(id="39zje0")
-# print(submission.title)  # Output: reddit will soon only be available ...
-
-# # or
 # submission = reddit.submission(url='https://www.reddit.com/...')
-
-##### AUTHOR
-# # assume you have a Submission instance bound to variable `submission`
-# redditor1 = submission.author
-# print(redditor1.name)  # Output: name of the redditor
-
-# # assume you have a Reddit instance bound to variable `reddit`
 # redditor2 = reddit.redditor("bboe")
-# print(redditor2.link_karma)  # Output: u/bboe's karma
-
-
-##### Comments
-# # assume you have a Reddit instance bound to variable `reddit`
-# top_level_comments = list(submission.comments)
-# all_comments = submission.comments.list()
-
-
-# # assume you have a Reddit instance bound to variable `reddit`
-# submission = reddit.submission(id="39zje0")
-# submission.comment_sort = "new"
-# top_level_comments = list(submission.comments)
+# pprint.pprint(vars(submission))

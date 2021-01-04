@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 
 from .forms import DashboardSearchForm
 from django.http import JsonResponse
-
+from django_q.tasks import async_task
 
 from scraper.service import RedditAuth, ScrapperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
@@ -34,11 +34,9 @@ class DashboardPageView(TemplateView):
             if form.is_valid():
                 searchText = form.cleaned_data['searchText']
                 print('searchText:' + searchText)
-                ScrapperService.search_subreddit(searchText, 1)
-                # reddit2 = RedditAuth.private_auth()
-
-               
-        
+                # async_task('tasks.inform_everyone')
+                # ScrapperService.subreddit_lookup_ondemand(searchText, 250)
+                ScrapperService.subreddit_all(300)
         # return render(request, 'explore/index.html', { 'data': data })
         return render(request, self.template_name)
 
