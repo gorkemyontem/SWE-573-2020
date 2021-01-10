@@ -1,6 +1,6 @@
 import praw
 import json
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
@@ -12,6 +12,18 @@ from django_q.tasks import async_task
 
 from scraper.service import RedditAuth, ScrapperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
+
+class SchedulerPageView(View):
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        async_task('scraper.tasks.inform_everyone', hook="scraper.tasks.hook_after_inform_everyone")
+
+        return JsonResponse("DONE", safe =False)
+
+
+class HomePageView(TemplateView):
+    template_name = 'pages/home.html'
 
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
@@ -34,9 +46,9 @@ class DashboardPageView(TemplateView):
             if form.is_valid():
                 searchText = form.cleaned_data['searchText']
                 print('searchText:' + searchText)
-                # async_task('tasks.inform_everyone')
-                # ScrapperService.subreddit_lookup_ondemand(searchText, 250)
-                ScrapperService.subreddit_all(300)
+                async_task('scraper.tasks.find_submission_without_comment')
+                    
+                # ScrapperService.subreddit_search(searchText, 300)
         # return render(request, 'explore/index.html', { 'data': data })
         return render(request, self.template_name)
 

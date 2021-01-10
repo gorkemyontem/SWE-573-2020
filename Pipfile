@@ -18,6 +18,7 @@ psycopg2-binary = "*"
 django-environ = "*"
 environ = "*"
 django-q = "*"
+textblob = "*"
 
 [requires]
-python_version = "3.7.6"
+python_version = "3.8.7"
