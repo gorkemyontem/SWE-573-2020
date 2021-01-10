@@ -12,15 +12,15 @@ from django_q.tasks import async_task
 
 from scraper.service import RedditAuth, ScrapperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
+from analyser.service import AnalyserService
 
 class SchedulerPageView(View):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        async_task('scraper.tasks.inform_everyone', hook="scraper.tasks.hook_after_inform_everyone")
-
+        AnalyserService.analyse_text()
         return JsonResponse("DONE", safe =False)
-
+        # async_task('scraper.tasks.inform_everyone', hook="scraper.tasks.hook_after_inform_everyone")
 
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
