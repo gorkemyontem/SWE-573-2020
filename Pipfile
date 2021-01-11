@@ -19,6 +19,7 @@ django-environ = "*"
 environ = "*"
 django-q = "*"
 textblob = "*"
+croniter = "*"
 
 [requires]
 python_version = "3.8.7"

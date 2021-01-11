@@ -83,6 +83,7 @@ class Submission(models.Model):
     comment_sort = models.CharField(max_length=500, null=True)
     content_categories = models.CharField(max_length=500, null=True)
     discussion_type = models.CharField(max_length=500, null=True)
+    is_analized = models.BooleanField(default=False)
     created_utc = models.DateTimeField()
 
     def __str__(self):
@@ -107,10 +108,11 @@ class Submission(models.Model):
 #DONE=> 'archived': True,
 #DONE=> 'over_18': False,
 #DONE=> 'permalink': '/r/COVID/comments/gmxq55/the_united_states_has_over_90000_cases_of_covid19/',
-#DONE=> 'category': None,
+#DONE=> 'category': None,  dataanalyse:[photography, Null]
 #DONE=> 'comment_sort': 'confidence',
-#DONE=> 'content_categories': None,
-#DONE=> 'discussion_type': None,
+#DONE=> 'content_categories': None,  dataanalyse:['photography', 'gaming', 'diy_and_crafts', 'entertainment', 'drawing_and_painting', 'comics', Null]
+#DONE=> 'discussion_type': None,  dataanalyse:[CHAT, Null]
+
 #endregion
 
 class Comments(models.Model):
@@ -132,7 +134,8 @@ class Comments(models.Model):
     depth = models.IntegerField(default=0)
     controversiality = models.IntegerField(default=0)
     archived =  models.BooleanField(default=False)
-    comment_type = models.CharField(max_length=500, null=True)
+    comment_type = models.CharField(max_length=500, null=True),
+    is_analized = models.BooleanField(default=False)
     created_utc = models.DateTimeField()
   
     def __str__(self):

@@ -198,8 +198,8 @@ ACCOUNT_UNIQUE_EMAIL = True
 
 Q_CLUSTER = {
     'name': 'DjangORM',
-    'workers': 1,
-    'timeout': 3600  ,
+    'workers': 2,
+    'timeout': 4800  ,
     'retry': 120,
     'queue_limit': 500,
     'orm': 'default'

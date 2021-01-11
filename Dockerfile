@@ -12,5 +12,10 @@ WORKDIR /code
 COPY Pipfile Pipfile.lock /code/
 RUN pip install pipenv && pipenv install --system
 
+RUN pip3 install nltk
+RUN [ "python", "-c", "import nltk; nltk.download('all')" ]
+# # ENTRYPOINT python
+
+
 # Copy project
 COPY . /code/
