@@ -4,19 +4,74 @@
 {% block title %}Home page{% endblock title %}
 
 {% block content %}
-<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-    <img src="{% static 'images/logo2-big.png' %}" class="img-fluid" alt="logo"/>
-    <p class="lead">Dashboard</p>
-
-      <form method="POST">
-          {% csrf_token %}
-           <div class="form-group">
-            <label for="searchText">Search</label>
-            <input type="text" class="form-control" id="searchText" name="searchText" placeholder="Type something">
-            <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
-          </div>
-          <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-
+<div class="row align-items-stretch">
+    <div class="col-md-12 col-lg-6 mg-t-20 mg-lg-t-0">
+        <div class="card card-dashboard-five">
+            <div class="card-header">
+                <h6 class="card-title">1. Search</h6>
+                <span class="card-text">Search a word and get analysis about that immediately</span>
+            </div>
+            <div class="card-body row row-sm text-center">
+                <form class="form fullwidth" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="searchText" name="searchText" placeholder="Search something">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 col-lg-6 mg-t-20 mg-lg-t-0">
+        <div class="card card-dashboard-five">
+            <div class="card-header">
+                <h6 class="card-title">2. Subreddit</h6>
+                <span class="card-text">Run sentiment analysis on a specific subreddit</span>
+            </div>
+            <div class="card-body row row-sm">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>&nbsp;Display Name</th>
+                                <th>Submissions</th>
+                                <th>Comments&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          
+                            {% for subreddit in top5submissions %} 
+                                <tr>
+                                    <td>&nbsp;<strong><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank">{{ subreddit.display_name }}</a></strong></td>
+                                    <td>{{ subreddit.submissions_count }}</td>
+                                    <td>{{ subreddit.comments_count }}&nbsp;</td>
+                                </tr>
+                            {% endfor %} 
+                            
+                        </tbody>
+                    </table>
+                </div><!-- table-responsive -->
+            </div>
+        </div>
+    </div>
 </div>
+<br>
+<div class="row align-items-stretch">
+    <div class="col-md-12 col-lg-12 mg-t-20 mg-lg-t-0">
+        <div class="card card-dashboard-five">
+            <div class="card-header">
+                <h6 class="card-title">3. All</h6>
+                <span class="card-text">Run sentiment analysis by using the whole database </span>
+            </div>
+            <div class="card-body row row-sm">
+                <a href="{% url 'dashboard' %}" class="btn btn-primary ml-2">All Analysis</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
 {% endblock content %}

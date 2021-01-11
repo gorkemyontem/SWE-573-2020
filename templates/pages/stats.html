@@ -1,0 +1,208 @@
+{% extends '_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Stats page{% endblock title %}
+
+{% block content %}
+<div class="row row-sm mg-b-20">
+    <div class="col-lg-4">
+        <div class="card card-dashboard-four card-dashboard-pageviews">
+            <div class="card-header">
+                <h6 class="card-title">Database Stats</h6>
+                <p class="card-text">This report is based on real time data</p>
+            </div><!-- card-header -->
+            <div class="card-body">
+                <div class="az-list-item">
+                    <div>
+                        <h6>Subreddits</h6>
+                        <span>Number of unique subreddits</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.subreddit | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+                <div class="az-list-item">
+                    <div>
+                        <h6>Submissions</h6>
+                        <span>Number of unique submissions</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.submission | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+                <div class="az-list-item">
+                    <div>
+                        <h6>Comments</h6>
+                        <span>Number of unique comments</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.comments | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+                <div class="az-list-item">
+                    <div>
+                        <h6>Redittors</h6>
+                        <span>Number of unique redittors</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.authorRedditor | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+
+            </div><!-- card-body -->
+        </div><!-- card -->
+    </div><!-- card -->
+    <div class="col-lg-4">
+        <div class="card card-dashboard-four card-dashboard-pageviews">
+            <div class="card-header">
+                <h6 class="card-title">Analyser Stats</h6>
+                <p class="card-text">This report is based on real time data</p>
+            </div><!-- card-header -->
+            <div class="card-body">
+                <div class="az-list-item">
+                    <div>
+                        <h6>Submission Analysis</h6>
+                        <span>Number of completed analysis</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.submissionAnalysis | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="az-list-item">
+                    <div>
+                        <h6>Comment Analysis</h6>
+                        <span>Number of completed analysis</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.commentAnalysis | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="az-list-item">
+                    <div>
+                        <h6>Sentence Analysis</h6>
+                        <span>Number of completed analysis</span>
+                    </div>
+                    <div>
+                        <h6 class="tx-primary">{{ db_counts.sentenceAnalysis | intcomma }}</h6>
+                        <span></span>
+                    </div>
+                </div>
+            </div><!-- card-body -->
+        </div><!-- card -->
+    </div>
+    <div class="col-lg-4 mg-t-20 mg-lg-t-0">
+        <div class="card card-dashboard-four">
+            <div class="card-header">
+                <h6 class="card-title">Analysis Progress</h6>
+            </div><!-- card-header -->
+            <div class="card-body">
+                <div class="az-traffic-detail-item">
+                    <div>
+                        <span>Submission Analysis </span>
+                        <span> {{ db_counts.submissionAnalysis | intcomma }} / {{ db_counts.submission | intcomma }}
+                            <span>({{ db_counts.submissionsRatio }}%)</span></span>
+                    </div>
+
+                    <div class="progress">
+                        <div class="progress-bar bg-purple wd-{{ db_counts.submissionsRatio }}p" role="progressbar" aria-valuenow="{{ db_counts.submissionsRatio }}"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div><!-- progress -->
+                </div>
+                <div class="az-traffic-detail-item">
+                    <div>
+                        <span>Comment Analysis </span>
+                        <span>{{ db_counts.commentAnalysis | intcomma }} / {{ db_counts.comments | intcomma }} <span>({{ db_counts.commentsRatio }}%)</span></span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info wd-{{ db_counts.commentsRatio }}p" role="progressbar" aria-valuenow="{{ db_counts.commentsRatio }}" aria-valuemin="0"
+                            aria-valuemax="100"></div>
+                    </div><!-- progress -->
+                </div>
+            </div><!-- card-body -->
+        </div><!-- card-dashboard-four -->
+    </div><!-- col -->
+</div>
+<div class="row row-sm mg-b-20">
+    <div class="col-lg-12 mg-t-20 mg-lg-t-0">
+        <div class="card card-table-one">
+            <h6 class="card-title">Subreddits with most submissions</h6>
+            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many comments</p>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>&nbsp;Display Name</th>
+                            <th>Title</th>
+                            <th>Url</th>
+                            <th>Subscribers</th>
+                            <th>Submissions</th>
+                            <th>Comments&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      
+                        {% for subreddit in db_counts.top5subredditsSubmissions %} 
+                            <tr>
+                                <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
+                                <td>{{ subreddit.title }}</td>
+                                <td><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank"> {{ subreddit.url }}</a></td>
+                                <td>{{ subreddit.subscribers }}</td>
+                                <td>{{ subreddit.submissions_count }}</td>
+                                <td>{{ subreddit.comments_count }}&nbsp;</td>
+                            </tr>
+                        {% endfor %} 
+                        
+                    </tbody>
+                </table>
+            </div><!-- table-responsive -->
+        </div><!-- card -->
+    </div><!-- col-lg -->
+</div>
+
+<div class="row row-sm mg-b-20">
+    <div class="col-lg-12 mg-t-20 mg-lg-t-0">
+        <div class="card card-table-one">
+            <h6 class="card-title">Subreddits with most comments</h6>
+            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many comments</p>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>&nbsp;Display Name</th>
+                            <th>Title</th>
+                            <th>Url</th>
+                            <th>Subscribers</th>
+                            <th>Submissions</th>
+                            <th>Comments&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subreddit in db_counts.top5subredditsComments %} 
+                            <tr>
+                                <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
+                                <td>{{ subreddit.title }}</td>
+                                <td><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank"> {{ subreddit.url }}</a></td>
+                                <td>{{ subreddit.subscribers }}</td>
+                                <td>{{ subreddit.submissions_count }}</td>
+                                <td>{{ subreddit.comments_count }}&nbsp;</td>
+                            </tr>
+                        {% endfor %} 
+                        
+                    </tbody>
+                </table>
+            </div><!-- table-responsive -->
+        </div><!-- card -->
+    </div><!-- col-lg -->
+</div>
+
+
+{% endblock content %}
