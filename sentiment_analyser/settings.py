@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.humanize',
 
     # Third-party
     'allauth',
@@ -132,7 +133,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Istanbul'
+
 
 USE_I18N = True
 
@@ -199,8 +202,8 @@ ACCOUNT_UNIQUE_EMAIL = True
 Q_CLUSTER = {
     'name': 'DjangORM',
     'workers': 2,
-    'timeout': 4800  ,
-    'retry': 120,
+    'timeout': 4800,
+    'retry': 4801,
     'queue_limit': 500,
     'orm': 'default'
 }

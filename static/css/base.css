@@ -32,6 +32,10 @@ body {
   background-color: #f5f5f5;
 }
 
+.form.fullwidth{
+  width: 100%;
+}
+
 /*
     yesil #6ebfc2
     kirmizi #d15641
