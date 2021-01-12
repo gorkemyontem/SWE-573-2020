@@ -55,21 +55,6 @@ def crawl_submission(id):
     ScrapperService.save_single(submissionRes, True)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # def find_submission_without_comment():
 #     for submission in Submission.objects.raw(' SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 1'):
 #         reddit = RedditAuth.public_auth()
