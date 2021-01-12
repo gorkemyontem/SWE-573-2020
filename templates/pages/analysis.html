@@ -1,0 +1,71 @@
+{% extends '_base.html' %}
+{% load static %}
+
+{% block title %}Home page{% endblock title %}
+
+{% block content-fluid %}
+
+<div class="row">
+    <div class="col-md-12 col-lg-2 mg-t-20 mg-lg-t-0">
+        <div class="card">
+            <img src="{% static 'images/reddit-logo.jpg' %}" class="card-img-top" alt="{{ object.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ object.display_name }}</h5>
+                <p class="card-text">{{ object.title }}</p>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Id:</strong> {{ object.subreddit_id }}</li>
+                <li class="list-group-item"><strong>Description:</strong> {{ object.description }}</li>
+                <li class="list-group-item"><strong>Subscribers:</strong> {{ object.subscribers }}</li>
+                <li class="list-group-item"><strong>Submissions:</strong> {{ additional_context.submissionCount }}</li>
+                <li class="list-group-item"><strong>Comments:</strong> {{ additional_context.commentCount }}</li>
+                <li class="list-group-item"><strong>Created:</strong> {{ object.created_utc }}</li>
+            </ul>
+            <div class="card-body">
+                <strong>Go to:</strong> <a class="card-link" href="https://www.reddit.com{{ subreddit.url }}"
+                    target="_blank">
+                    {{ subreddit.url }}
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 col-lg-10 mg-t-20 mg-lg-t-0">
+        <div class="row">
+            <div class="col-6 mg-t-20 mg-lg-t-0">
+                <div class="az-content-label mg-b-5">Word Count</div>
+                <p class="mg-b-20">Most used nouns both in submissions and comments</p>
+                <div>
+                    <div class="az-content-label az-content-label-sm mg-b-15">Solid Color</div>
+                    <div class="ht-300 ht-lg-350">
+                        <canvas id="myChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-6 mg-t-20 mg-lg-t-0">
+
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">     window.CSRF_TOKEN = "{{ csrf_token }}"; </script> 
+<script>
+    
+    $.ajax({
+        type: 'POST', 
+        url: '{% url 'post_friend' %}',
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        data: {data: 'some-data-to-send-to-views'},  // May need to add a CSRF Token as post data (eg: csrfmiddlewaretoken: "{{ csrf_token }}")
+        error: function() {
+            alert('There was an issue getting the data...');
+        },
+        success: function(data) {
+            // Accessing data passed back from request, handle it how you wish.
+            alert(data.foo);
+            alert(data.more);
+        }
+    });
+
+</script>
+
+{% endblock content-fluid %}
