@@ -21,6 +21,7 @@ class AnalyserService:
 
     @staticmethod
     def analyse_comment(comment):
+        print(comment.comment_id)
         blob = TextBlob(comment.body)
         index = 0
         total_polarity = 0.0
@@ -40,6 +41,7 @@ class AnalyserService:
 
     @staticmethod
     def analyse_submission(submission):
+            print(submission.submission_id)
             blobText = submission.title + " " + submission.selftext
             blob = TextBlob(blobText)
             index = 0

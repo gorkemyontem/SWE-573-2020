@@ -1,6 +1,6 @@
 import praw
 import json
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, View, DetailView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
@@ -26,15 +26,57 @@ class SchedulerPageView(View):
 
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # for _ in range(500):
+        #     for comment in Comments.objects.all().filter(is_analized=False)[:750]: 
+        #         AnalyserService.analyse_comment(comment)
 
-class HomePageView(TemplateView):
-    template_name = 'pages/home.html'
+            # for submission in Submission.objects.all().filter(is_analized=False)[:250]: 
+            #     AnalyserService.analyse_submission(submission)
 
+        print("DONE")
+        return super().dispatch(request, *args, **kwargs)
 
 class AboutPageView(TemplateView):
     template_name = 'pages/about.html'
 
+class AnalysisPageView(DetailView):
+    template_name = 'pages/analysis.html'
+    model = Subreddit
+    subreddit_detail_cache_key = 'cache.subreddit-{0}-detail'
+    subreddit_detail_cache_time = 10 # 3 saat
+    # subreddit_detail_cache_time = 1*60*60*3 # 3 saat
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.subreddit_detail_cache_key = self.subreddit_detail_cache_key.format(self.kwargs.get('pk'))
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if cache.get(self.subreddit_detail_cache_key) is None: 
+
+            submissions = Submission.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
+            comments = Comments.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
+
+
+            additional_context = { 
+                "submissionCount" : submissions,
+                "commentCount" : comments,
+            }
+
+            cache.set(self.subreddit_detail_cache_key, additional_context, self.subreddit_detail_cache_time)
+        else: 
+            additional_context = cache.get(self.subreddit_detail_cache_key)
+
+        data['additional_context'] = additional_context
+        return data
+
+
+
+   
+   
 class DashboardPageView(TemplateView):
     template_name = 'pages/dashboard.html'
     top5submissions_cache_key = 'cache.top5submissions'
@@ -51,7 +93,6 @@ class DashboardPageView(TemplateView):
             cache.set(self.top5submissions_cache_key, top5subredditsSubmissions, self.top5submissions_cache_time)
         else: 
             top5subredditsSubmissions = cache.get(self.top5submissions_cache_key)
-            print("cacheden")
         data['top5submissions'] = top5subredditsSubmissions
         return data
 

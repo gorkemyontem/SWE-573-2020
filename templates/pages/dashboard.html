@@ -39,15 +39,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                          
                             {% for subreddit in top5submissions %} 
                                 <tr>
-                                    <td>&nbsp;<strong><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank">{{ subreddit.display_name }}</a></strong></td>
+                                    <td>&nbsp;<strong><a href="{% url 'analysis' pk=subreddit.id %}" target="_blank">{{ subreddit.display_name }}</a></strong></td>
                                     <td>{{ subreddit.submissions_count }}</td>
                                     <td>{{ subreddit.comments_count }}&nbsp;</td>
                                 </tr>
                             {% endfor %} 
-                            
                         </tbody>
                     </table>
                 </div><!-- table-responsive -->

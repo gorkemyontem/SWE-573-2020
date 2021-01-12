@@ -4,12 +4,12 @@ from django_q.tasks import async_task
 from django_q.models import Schedule
 
 def create_schedule_once(): 
-    # Schedule.objects.create(func='scraper.tasks.daily_tasks', schedule_type=Schedule.DAILY)
-    # Schedule.objects.create(func='scraper.tasks.find_submission_without_comment', schedule_type=Schedule.ONCE)
+    Schedule.objects.create(func='scraper.tasks.daily_tasks', schedule_type=Schedule.DAILY)
+    Schedule.objects.create(func='scraper.tasks.find_submission_without_comment', schedule_type=Schedule.ONCE)
     print("New Scraper tasks scheduled!")
 
 def daily_tasks():
-    # 27 tane task olusturuyor
+    # Creates 27 tasks at once
     subreddits = [
         'all',
         'COVID',
@@ -45,13 +45,6 @@ def crawl_subreddit(subredditId, callType = 'hot', limit = 300):
         topSubmissions = subredditRes.top(limit=limit)
         ScrapperService.save_all(topSubmissions, False)
 
-# def find_submission_without_comment():
-#     for submission in Submission.objects.raw(' SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 1'):
-#         reddit = RedditAuth.public_auth()
-#         submissionRes = reddit.submission(id=submission.submission_id)
-#         ScrapperService.save_single(submissionRes, True)
-
-
 def find_submission_without_comment(task = None):
     for submission in Submission.objects.raw(' SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 1'):
         async_task('scraper.tasks.crawl_submission', submission.submission_id, hook='scraper.tasks.find_submission_without_comment')
@@ -60,3 +53,25 @@ def crawl_submission(id):
     reddit = RedditAuth.public_auth()
     submissionRes = reddit.submission(id=id)
     ScrapperService.save_single(submissionRes, True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def find_submission_without_comment():
+#     for submission in Submission.objects.raw(' SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 1'):
+#         reddit = RedditAuth.public_auth()
+#         submissionRes = reddit.submission(id=submission.submission_id)
+#         ScrapperService.save_single(submissionRes, True)
