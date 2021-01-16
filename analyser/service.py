@@ -1,10 +1,14 @@
 import praw
 import os
 import environ
+import requests
+import base64
 import pprint
-from .models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis
+import json
+from .models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis, TagMeAnalysis, TagMeSentenceAnalysis
 from scraper.models import Comments, Submission
 from datetime import datetime
+from django.core.cache import cache
 from django.utils import timezone
 from django.utils.text import Truncator
 from textblob import TextBlob
@@ -30,14 +34,14 @@ class AnalyserService:
             index += 1
             total_polarity += sentence.sentiment.polarity
             total_subjectivity += sentence.sentiment.subjectivity
-            AnalysisModelService.save_sentence_analysis(comment.comment_id, comment.submission.submission_id, comment.subreddit.subreddit_id, comment.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'body', index, sentence.noun_phrases, sentence.words)
-
+            sentenceAnalysis = AnalysisModelService.save_sentence_analysis(comment.comment_id, comment.submission.submission_id, comment.subreddit.subreddit_id, comment.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'body', index, sentence.words, sentence.noun_phrases, comment.created_utc )
+            AnalyserService.analyse_tagme(sentence, sentenceAnalysis)
+            
         if index == 0:
             index = 1
         AnalysisModelService.save_comment_analysis(comment, blob.sentiment.polarity, blob.sentiment.subjectivity, blob.words, blob.noun_phrases, total_polarity/index, total_subjectivity/index)
         comment.is_analized = True
         comment.save()
-
 
     @staticmethod
     def analyse_submission(submission):
@@ -51,19 +55,62 @@ class AnalyserService:
                 index += 1
                 total_polarity += sentence.sentiment.polarity
                 total_subjectivity += sentence.sentiment.subjectivity
-                AnalysisModelService.save_sentence_analysis("submission", submission.submission_id, submission.subreddit.subreddit_id, submission.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'title+body', index, sentence.noun_phrases, sentence.words)
-
+                sentenceAnalysis = AnalysisModelService.save_sentence_analysis("submission", submission.submission_id, submission.subreddit.subreddit_id, submission.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'title+body', index, sentence.words, sentence.noun_phrases, submission.created_utc)
+                AnalyserService.analyse_tagme(sentence, sentenceAnalysis)
             if index == 0:
                 index = 1
                 
             AnalysisModelService.save_submission_analysis(submission, blob.sentiment.polarity, blob.sentiment.subjectivity, blob.words, blob.noun_phrases, total_polarity/index, total_subjectivity/index)
             submission.is_analized = True
             submission.save()
+    
+    @staticmethod
+    def analyse_tagme(sentenceText, sentenceAnalysis):
+        response = requests.get('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + sentenceText)
+        if response.status_code < 300:
+            tagsRaw = json.loads(response.text)
+            if tagsRaw is not None and tagsRaw['annotations'] is not None: 
+                for annotation in tagsRaw['annotations']:
+                    if 'title' in annotation:
+                        tagmeanalysis = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'])
+                        AnalysisModelService.save_tagme_sentence_analysis(tagmeanalysis, sentenceAnalysis)
+                        sentenceAnalysis.is_analized = True
+                        sentenceAnalysis.save()
+                    else: 
+                        print("title NOT FOUND")
+
 
 class AnalysisModelService:
 
     @staticmethod
-    def save_sentence_analysis(comment_id, submission_id, subreddit_id, author_id, polarity, subjectivity, text, text_type, order, words, noun_phrases):
+    def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title):
+        try:
+            tagMeAnalysis = TagMeAnalysis.objects.get(spot=spot, title=title)
+            print("====== exist tagme ======")
+            return tagMeAnalysis
+        except TagMeAnalysis.DoesNotExist: 
+            print("====== doesnt exist ======")
+            tagMeAnalysis = TagMeAnalysis()
+            tagMeAnalysis.tagme_id = tagme_id
+            tagMeAnalysis.spot = spot
+            tagMeAnalysis.start = start
+            tagMeAnalysis.link_probability = link_probability
+            tagMeAnalysis.rho = rho
+            tagMeAnalysis.end = end
+            tagMeAnalysis.title = title
+            tagMeAnalysis.save()
+            return tagMeAnalysis
+       
+    @staticmethod
+    def save_tagme_sentence_analysis(tagmeanalysis, sentenceanalysis):
+        tagmesentenceanalysis = TagMeSentenceAnalysis()
+        tagmesentenceanalysis.tagmeanalysis = tagmeanalysis
+        tagmesentenceanalysis.sentenceanalysis = sentenceanalysis
+        tagmesentenceanalysis.save()
+        return tagmesentenceanalysis
+
+    @staticmethod
+    def save_sentence_analysis(comment_id, submission_id, subreddit_id, author_id, polarity, subjectivity, text, text_type, order, words, noun_phrases, created_utc):
         classification = AnalysisModelService.get_classification(polarity)
         sentenceAnalysis = SentenceAnalysis()
         sentenceAnalysis.comment_id = comment_id 
@@ -78,6 +125,7 @@ class AnalysisModelService:
         sentenceAnalysis.order = order
         sentenceAnalysis.words = AnalysisModelService.flatten_list(words)
         sentenceAnalysis.noun_phrases = AnalysisModelService.flatten_list(noun_phrases)
+        sentenceAnalysis.reddit_created_utc = created_utc
         sentenceAnalysis.save()
         return sentenceAnalysis
 
@@ -104,6 +152,7 @@ class AnalysisModelService:
         commentAnalysis.ups = comment.ups
         commentAnalysis.downs = comment.downs
         commentAnalysis.depth = comment.depth
+        commentAnalysis.reddit_created_utc = comment.created_utc
         commentAnalysis.save()
         return commentAnalysis
 
@@ -128,6 +177,7 @@ class AnalysisModelService:
         submissionAnalysis.upvote_ratio = submission.upvote_ratio
         submissionAnalysis.downs = submission.downs
         submissionAnalysis.ups = submission.ups
+        submissionAnalysis.reddit_created_utc = submission.created_utc
         submissionAnalysis.save()
         return submissionAnalysis
 
@@ -153,51 +203,3 @@ class AnalysisModelService:
                 flattened.append(sublist)
         
         return flattened
-
-        
-
-
-# class SubmissionAnalysis(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     submission_id = models.CharField(max_length=50)
-#     subreddit_id = models.CharField(max_length=50)
-#     author_id = models.CharField(max_length=50)
-#     words = ArrayField(ArrayField(models.CharField(max_length=100, blank=True)), size=1)
-#     noun_phrases = ArrayField(ArrayField(models.CharField(max_length=200, blank=True)), size=1 )
-#     num_comments = models.IntegerField(default=0)
-#     avg_polarity = models.FloatField(default=0.0)
-#     avg_subjectivity = models.FloatField(default=0.0)
-#     avg_classification = models.CharField(max_length=50)
-#     polarity = models.FloatField(default=0.0)
-#     subjectivity = models.FloatField(default=0.0)
-#     classification = models.CharField(max_length=50)
-#     score = models.IntegerField(default=0)
-#     upvote_ratio = models.FloatField(default=0.0)
-#     downs = models.IntegerField(default=0) 
-#     ups = models.IntegerField(default=0)
-#     created_utc = models.DateTimeField()
-
-#     def __str__(self):
-#         return self.submission_id
-
-
-
-
-
-
-
-
-
-
-
-# pprint.pprint(blob.tags)
-# pprint.pprint(blob.noun_phrases) 
-# pprint.pprint(blob.words) 
-# pprint.pprint(blob.polarity) 
-
-# print(sentence)
-# print(sentence.noun_phrases)
-# print(sentence.words)
-# pprint.pprint(sentence.sentiment.polarity) 
-# print(sentence.sentiment.polarity)
-# print(sentence.sentiment.subjectivity)

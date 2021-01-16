@@ -14,7 +14,6 @@ ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
 environ.Env.read_env(ENV_DIR)
 
 class RedditAuth:
-
     @staticmethod
     def public_auth():
         reddit = praw.Reddit(client_id=env('REDDIT_CLIENT_ID'),
