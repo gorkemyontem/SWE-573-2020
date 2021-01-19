@@ -1,21 +1,12 @@
-import praw
 import os
 import environ
 import requests
-import base64
-import pprint
 import json
 from .models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis, TagMeAnalysis, TagMeSentenceAnalysis
 from scraper.models import Comments, Submission
-from datetime import datetime
-from django.core.cache import cache
-from django.utils import timezone
-from django.utils.text import Truncator
 from textblob import TextBlob
-
-# from textblob import TextBlob, Word, Blobber
-# from textblob.classifiers import NaiveBayesClassifier
-# from textblob.taggers import NLTKTagger
+import time
+from django.core.cache import cache
 
 env = environ.Env()
 ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
@@ -24,72 +15,118 @@ environ.Env.read_env(ENV_DIR)
 class AnalyserService:
 
     @staticmethod
-    def analyse_comment(comment):
-        print(comment.comment_id)
+    def polarity_analysis_comment(comment):
+        # print(comment.comment_id)
         blob = TextBlob(comment.body)
         index = 0
         total_polarity = 0.0
         total_subjectivity = 0.0
-        for sentence in blob.sentences:
-            index += 1
-            total_polarity += sentence.sentiment.polarity
-            total_subjectivity += sentence.sentiment.subjectivity
-            sentenceAnalysis = AnalysisModelService.save_sentence_analysis(comment.comment_id, comment.submission.submission_id, comment.subreddit.subreddit_id, comment.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'body', index, sentence.words, sentence.noun_phrases, comment.created_utc )
-            AnalyserService.analyse_tagme(sentence, sentenceAnalysis)
-            
-        if index == 0:
-            index = 1
-        AnalysisModelService.save_comment_analysis(comment, blob.sentiment.polarity, blob.sentiment.subjectivity, blob.words, blob.noun_phrases, total_polarity/index, total_subjectivity/index)
-        comment.is_analized = True
-        comment.save()
-
-    @staticmethod
-    def analyse_submission(submission):
-            print(submission.submission_id)
-            blobText = submission.title + " " + submission.selftext
-            blob = TextBlob(blobText)
-            index = 0
-            total_polarity = 0.0
-            total_subjectivity = 0.0
+        try: 
             for sentence in blob.sentences:
+                if len(sentence.stripped) < 10:
+                    continue
+
                 index += 1
                 total_polarity += sentence.sentiment.polarity
                 total_subjectivity += sentence.sentiment.subjectivity
-                sentenceAnalysis = AnalysisModelService.save_sentence_analysis("submission", submission.submission_id, submission.subreddit.subreddit_id, submission.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'title+body', index, sentence.words, sentence.noun_phrases, submission.created_utc)
-                AnalyserService.analyse_tagme(sentence, sentenceAnalysis)
+                AnalysisModelService.save_sentence_analysis(comment.comment_id, comment.submission.submission_id, comment.subreddit.subreddit_id, comment.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'body', index, sentence.words, sentence.noun_phrases, comment.created_utc )
             if index == 0:
                 index = 1
-                
+            AnalysisModelService.save_comment_analysis(comment, blob.sentiment.polarity, blob.sentiment.subjectivity, blob.words, blob.noun_phrases, total_polarity/index, total_subjectivity/index)
+            comment.is_analized = True
+            comment.save()
+            print("saved =>", comment.comment_id)
+        except Exception as e:
+            print("Oops [polarity_analysis_comment]!  Try again..." + str(e) + comment.comment_id)
+
+    @staticmethod
+    def polarity_analysis_submission(submission):
+        # print(submission.submission_id, submission.title[0:25], submission.selftext[0:25])
+        blobText = submission.title + " " + submission.selftext
+        blob = TextBlob(blobText)
+        index = 0
+        total_polarity = 0.0
+        total_subjectivity = 0.0
+
+        try: 
+            for sentence in blob.sentences:
+                if len(sentence.stripped) < 10:
+                    continue
+
+                index += 1
+                total_polarity += sentence.sentiment.polarity
+                total_subjectivity += sentence.sentiment.subjectivity
+                AnalysisModelService.save_sentence_analysis("submission", submission.submission_id, submission.subreddit.subreddit_id, submission.redditor.redditor_id, sentence.sentiment.polarity, sentence.sentiment.subjectivity, sentence, 'title+body', index, sentence.words, sentence.noun_phrases, submission.created_utc)
+            if index == 0:
+                index = 1
+            
             AnalysisModelService.save_submission_analysis(submission, blob.sentiment.polarity, blob.sentiment.subjectivity, blob.words, blob.noun_phrases, total_polarity/index, total_subjectivity/index)
             submission.is_analized = True
             submission.save()
-    
+            print("saved =>", submission.submission_id)
+        except Exception as e:
+            print("Oops [polarity_analysis_submission]!  Try again..." + str(e))
+
     @staticmethod
-    def analyse_tagme(sentenceText, sentenceAnalysis):
-        response = requests.get('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + sentenceText)
-        if response.status_code < 300:
-            tagsRaw = json.loads(response.text)
-            if tagsRaw is not None and tagsRaw['annotations'] is not None: 
-                for annotation in tagsRaw['annotations']:
-                    if 'title' in annotation:
-                        tagmeanalysis = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'])
-                        AnalysisModelService.save_tagme_sentence_analysis(tagmeanalysis, sentenceAnalysis)
-                        sentenceAnalysis.is_analized = True
-                        sentenceAnalysis.save()
-                    else: 
-                        print("title NOT FOUND")
+    def tagme_analysis_sentences(sentenceAnalysis):
+        # print(sentenceAnalysis.id)
+        try: 
+            for tagMeAnalysisId in AnalyserService.run_tagme_and_get_array(sentenceAnalysis.text): 
+                AnalysisModelService.save_tagme_sentence_analysis(tagMeAnalysisId, sentenceAnalysis)   
+
+            sentenceAnalysis.is_analized = True
+            sentenceAnalysis.save()
+            print("saved =>", sentenceAnalysis.submission_id)
+        except Exception as e:
+            print("Oops [tagme_analysis_sentences]!  Try again..." + str(e))
+
+            
+    @staticmethod
+    def run_tagme_and_get_array(text):
+        # print('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
+        response = requests.get('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
+        registeredTagMeAnalysisList = []
+        if response.status_code > 299:
+            print("[run_tagme_and_get_array]: RESPONE ERROR", response.status_code, text)
+            return registeredTagMeAnalysisList
+        tagsRaw = json.loads(response.text)
+        if tagsRaw is None:
+            print("[run_tagme_and_get_array]: tagsRaw NOT FOUND", text)
+            return registeredTagMeAnalysisList
+
+        if tagsRaw['annotations'] is None: 
+            print("[run_tagme_and_get_array]: annotations NOT FOUND", text)
+            return registeredTagMeAnalysisList
+
+        if not tagsRaw['annotations'] : 
+            print("[run_tagme_and_get_array]: annotations empty []", text)
+            return registeredTagMeAnalysisList
+        
+        for annotation in tagsRaw['annotations']:
+            if 'title' in annotation:
+                tagmeanalysisId = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'])
+                registeredTagMeAnalysisList.append(tagmeanalysisId)
+            else: 
+                print("[run_tagme_and_get_array]: title NOT FOUND")
+
+        return registeredTagMeAnalysisList
 
 
 class AnalysisModelService:
 
     @staticmethod
     def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title):
+        tags = cache.get('tags')
+        findings = [item for item in tags if item[1] == spot and item[2] == title]
+        if findings: 
+            # print("*CACHE*")
+            return findings[0][0] 
         try:
             tagMeAnalysis = TagMeAnalysis.objects.get(spot=spot, title=title)
-            print("====== exist tagme ======")
-            return tagMeAnalysis
+            print("Exist")
+            return tagMeAnalysis.id
         except TagMeAnalysis.DoesNotExist: 
-            print("====== doesnt exist ======")
+            print("DoesNotExist")
             tagMeAnalysis = TagMeAnalysis()
             tagMeAnalysis.tagme_id = tagme_id
             tagMeAnalysis.spot = spot
@@ -99,12 +136,15 @@ class AnalysisModelService:
             tagMeAnalysis.end = end
             tagMeAnalysis.title = title
             tagMeAnalysis.save()
-            return tagMeAnalysis
+            return tagMeAnalysis.id
        
     @staticmethod
-    def save_tagme_sentence_analysis(tagmeanalysis, sentenceanalysis):
+    def save_tagme_sentence_analysis(tagMeAnalysisId, sentenceanalysis):
+        # HACK
+        tagMeAnalysis = TagMeAnalysis()
+        tagMeAnalysis.id = tagMeAnalysisId
         tagmesentenceanalysis = TagMeSentenceAnalysis()
-        tagmesentenceanalysis.tagmeanalysis = tagmeanalysis
+        tagmesentenceanalysis.tagmeanalysis = tagMeAnalysis
         tagmesentenceanalysis.sentenceanalysis = sentenceanalysis
         tagmesentenceanalysis.save()
         return tagmesentenceanalysis
@@ -181,7 +221,6 @@ class AnalysisModelService:
         submissionAnalysis.save()
         return submissionAnalysis
 
-
     @staticmethod
     def get_classification(score):
         if score < 0:
@@ -191,15 +230,14 @@ class AnalysisModelService:
         else:
             return 'Positive'
 
-
     @staticmethod
     def flatten_list(list):
         flattened = []
         for sublist in list:
             if type(sublist).__name__ == 'list': 
                 for val in sublist:
-                    flattened.append(val)
+                    flattened.append(val[:100])
             else:
-                flattened.append(sublist)
+                flattened.append(sublist[:100])
         
         return flattened
