@@ -2,21 +2,54 @@ from django_q.tasks import async_task
 from scraper.models import Comments, Submission
 from .service import AnalyserService
 from django_q.models import Schedule
+from django.core.cache import cache
+import concurrent.futures
+from analyser.models import SentenceAnalysis, TagMeAnalysis
+from scraper.models import Submission, Comments
+from .thread import DjangoConnectionThreadPoolExecutor
+import time
 
-def create_schedule_once(): 
-    Schedule.objects.create(func='analyser.tasks.analyse_submissions', schedule_type=Schedule.CRON, cron = '0 */6 * * *')
-    Schedule.objects.create(func='analyser.tasks.analyse_comments', schedule_type=Schedule.MINUTES, minutes=10)
-    # Schedule.objects.create(func='analyser.tasks.analyse_submissions', schedule_type=Schedule.ONCE, hook='analyser.tasks.analyse_submissions')
-    # Schedule.objects.create(func='analyser.tasks.analyse_comments', schedule_type=Schedule.ONCE, hook='analyser.tasks.analyse_comments')
-    print("New Analyser tasks scheduled!")
-   
+def one_time_schedules(): 
+    Schedule.objects.create(func='scraper.tasks.crawl_subreddits', schedule_type=Schedule.DAILY)
+    # Schedule.objects.create(func='scraper.tasks.find_submission_without_comment', schedule_type=Schedule.DAILY)
+    Schedule.objects.create(func='analyser.tasks.polarity_analysis_submission_task', schedule_type=Schedule.CRON, cron = '0 */6 * * *')
+    Schedule.objects.create(func='analyser.tasks.polarity_analysis_comment_task', schedule_type=Schedule.MINUTES, minutes=10)
 
-def analyse_comments():
-    for comment in Comments.objects.all().filter(is_analized=False)[:750]: 
-        AnalyserService.analyse_comment(comment)
+def polarity_analysis_submission_task():
+    for _ in range(100):
+        bulk = []
+        bulk.extend(Submission.objects.all().filter(is_analized=False)[:50])
+
+        t1 = time.perf_counter()
+        with DjangoConnectionThreadPoolExecutor() as executor:
+            executor.map(AnalyserService.polarity_analysis_submission, bulk)
+        
+        t2 = time.perf_counter()
+        print(f'Submission {_} - Finished in {round(t2-t1)} seconds')   
 
 
-def analyse_submissions():
-    for submission in Submission.objects.all().filter(is_analized=False)[:250]: 
-        AnalyserService.analyse_submission(submission)
- 
+def polarity_analysis_comment_task():
+    for _ in range(3000):
+        bulk = []
+        bulk.extend(Comments.objects.all().filter(is_analized=False)[:50])
+
+        t1 = time.perf_counter()
+        with DjangoConnectionThreadPoolExecutor() as executor: 
+            executor.map(AnalyserService.polarity_analysis_comment, bulk)
+
+        t2 = time.perf_counter() 
+        print(f'Comment {_} - Finished in {round(t2-t1)} seconds')
+
+
+def tagme_analysis_sentences_task():
+    cache.set('tags', TagMeAnalysis.objects.all().values_list('id','spot','title'), 1*60*60*6)
+    for _ in range(10000):
+        bulk = []
+        bulk.extend(SentenceAnalysis.objects.all().filter(is_analized= False)[:8])
+
+        t1 = time.perf_counter()
+        with DjangoConnectionThreadPoolExecutor() as executor:
+            executor.map(AnalyserService.tagme_analysis_sentences, bulk)
+        
+        t2 = time.perf_counter()
+        print(f'TagMe {_} - Finished in {round(t2-t1)} seconds')
