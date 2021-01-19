@@ -5,6 +5,46 @@
 {% block title %}Stats page{% endblock title %}
 
 {% block content %}
+{% csrf_token %}
+<div class="row row-sm mg-b-20">
+    <div class="col-lg-12">
+        <div class="card card-dashboard-five">
+            <div class="card-header">
+                <h6 class="card-title">Analysis Triggers</h6>
+                <span class="card-text">Analysis runs scheduled, but you can trigger some of them from here.</span>
+            </div><!-- card-header -->
+            <div class="card-body row row-sm">
+                <div class="col d-sm-flex align-items-center">
+                    <button id="daily" class="btn btn-dark btn-with-icon btn-block btn-api-call">
+                        Daily Tasks
+                    </button>
+                </div><!-- col -->
+                <div class="col d-sm-flex align-items-center">
+                    <button id="comment-scraping" class="btn btn-dark btn-with-icon btn-block btn-api-call">
+                        Comment Scraping
+                    </button>
+                </div><!-- col -->
+                <div class="col d-sm-flex align-items-center">
+                    <button id="submission-analysis" class="btn btn-info btn-with-icon btn-block btn-api-call">
+                        Submission Analysis
+                    </button>
+                </div><!-- col -->
+                <div class="col d-sm-flex align-items-center">
+                    <button id="comment-analysis" class="btn btn-info btn-with-icon btn-block btn-api-call">
+                        Comments Analysis
+                    </button>
+                </div><!-- col -->
+                <div class="col d-sm-flex align-items-center">
+                    <button id="tagme-analysis" class="btn btn-danger btn-with-icon btn-block btn-api-call">
+                        Tagme Analysis
+                    </button>
+                </div><!-- col -->
+            </div><!-- card-body -->
+        </div><!-- card-dashboard-five -->
+    </div>
+</div>
+
+
 <div class="row row-sm mg-b-20">
     <div class="col-lg-4">
         <div class="card card-dashboard-four card-dashboard-pageviews">
@@ -108,25 +148,45 @@
                 <div class="az-traffic-detail-item">
                     <div>
                         <span>Submission Analysis </span>
-                        <span> {{ db_counts.submissionAnalysis | intcomma }} / {{ db_counts.submission | intcomma }}
-                            <span>({{ db_counts.submissionsRatio }}%)</span></span>
+                        <span> 
+                            {{ db_counts.submissionAnalysis | intcomma }} / {{ db_counts.submission | intcomma }}
+                        </span>
+                        <span>({{ db_counts.submissionsRatio }}%)</span>
                     </div>
 
                     <div class="progress">
-                        <div class="progress-bar bg-purple wd-{{ db_counts.submissionsRatio }}p" role="progressbar" aria-valuenow="{{ db_counts.submissionsRatio }}"
-                            aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-purple wd-{{ db_counts.submissionsRatio }}p" role="progressbar"
+                            aria-valuenow="{{ db_counts.submissionsRatio }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
                     </div><!-- progress -->
                 </div>
                 <div class="az-traffic-detail-item">
                     <div>
                         <span>Comment Analysis </span>
-                        <span>{{ db_counts.commentAnalysis | intcomma }} / {{ db_counts.comments | intcomma }} <span>({{ db_counts.commentsRatio }}%)</span></span>
+                        <span>
+                            {{ db_counts.commentAnalysis | intcomma }} / {{ db_counts.comments | intcomma }}
+                        </span>
+                        <span> ({{ db_counts.commentsRatio }}%)</span>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar bg-info wd-{{ db_counts.commentsRatio }}p" role="progressbar" aria-valuenow="{{ db_counts.commentsRatio }}" aria-valuemin="0"
-                            aria-valuemax="100"></div>
+                        <div class="progress-bar bg-info wd-{{ db_counts.commentsRatio }}p" role="progressbar"
+                            aria-valuenow="{{ db_counts.commentsRatio }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div><!-- progress -->
                 </div>
+                <div class="az-traffic-detail-item">
+                    <div>
+                        <span>TagMe Analysis </span>
+                        <span>
+                            {{ db_counts.analizedSentenceAnalysis | intword }} / {{ db_counts.sentenceAnalysis | intword }}
+                        </span>
+                        <span> ({{ db_counts.tagMeRatio }}%)</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info wd-{{ db_counts.tagMeRatio }}p" role="progressbar"
+                            aria-valuenow="{{ db_counts.tagMeRatio }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div><!-- progress -->
+                </div>
+                
             </div><!-- card-body -->
         </div><!-- card-dashboard-four -->
     </div><!-- col -->
@@ -135,7 +195,8 @@
     <div class="col-lg-12 mg-t-20 mg-lg-t-0">
         <div class="card card-table-one">
             <h6 class="card-title">Subreddits with most submissions</h6>
-            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many comments</p>
+            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many
+                comments</p>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -149,18 +210,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                      
-                        {% for subreddit in db_counts.top5subredditsSubmissions %} 
-                            <tr>
-                                <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
-                                <td>{{ subreddit.title }}</td>
-                                <td><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank"> {{ subreddit.url }}</a></td>
-                                <td>{{ subreddit.subscribers }}</td>
-                                <td>{{ subreddit.submissions_count }}</td>
-                                <td>{{ subreddit.comments_count }}&nbsp;</td>
-                            </tr>
-                        {% endfor %} 
-                        
+
+                        {% for subreddit in db_counts.top5subredditsSubmissions %}
+                        <tr>
+                            <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
+                            <td>{{ subreddit.title }}</td>
+                            <td>
+                                <a href="https://www.reddit.com{{ subreddit.url }}" target="_blank">
+                                    {{ subreddit.url }}
+                                </a>
+                            </td>
+                            <td>{{ subreddit.subscribers }}</td>
+                            <td>{{ subreddit.submissions_count }}</td>
+                            <td>{{ subreddit.comments_count }}&nbsp;</td>
+                        </tr>
+                        {% endfor %}
+
                     </tbody>
                 </table>
             </div><!-- table-responsive -->
@@ -172,7 +237,8 @@
     <div class="col-lg-12 mg-t-20 mg-lg-t-0">
         <div class="card card-table-one">
             <h6 class="card-title">Subreddits with most comments</h6>
-            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many comments</p>
+            <p class="az-content-text mg-b-20">A subreddit contains submissions. And each submission can have many
+                comments</p>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -186,17 +252,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for subreddit in db_counts.top5subredditsComments %} 
-                            <tr>
-                                <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
-                                <td>{{ subreddit.title }}</td>
-                                <td><a href="https://www.reddit.com{{ subreddit.url }}" target="_blank"> {{ subreddit.url }}</a></td>
-                                <td>{{ subreddit.subscribers }}</td>
-                                <td>{{ subreddit.submissions_count }}</td>
-                                <td>{{ subreddit.comments_count }}&nbsp;</td>
-                            </tr>
-                        {% endfor %} 
-                        
+                        {% for subreddit in db_counts.top5subredditsComments %}
+                        <tr>
+                            <td>&nbsp;<strong>{{ subreddit.display_name }}</strong></td>
+                            <td>{{ subreddit.title }}</td>
+                            <td>
+                                <a href="https://www.reddit.com{{ subreddit.url }}" target="_blank">
+                                    {{ subreddit.url }}
+                                </a>
+                            </td>
+                            <td>{{ subreddit.subscribers }}</td>
+                            <td>{{ subreddit.submissions_count }}</td>
+                            <td>{{ subreddit.comments_count }}&nbsp;</td>
+                        </tr>
+                        {% endfor %}
+
                     </tbody>
                 </table>
             </div><!-- table-responsive -->

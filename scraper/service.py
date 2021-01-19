@@ -57,6 +57,18 @@ class ScrapperService:
         except Exception as e:
             print("Oops [save_all]!  Try again..." + str(e))
 
+
+    @staticmethod
+    def scrape_single_submission(submission):
+        try:
+            print(submission.submission_id)
+            reddit = RedditAuth.public_auth()
+            submissionRes = reddit.submission(id=submission.submission_id)
+            ScrapperService.save_single(submissionRes, True)
+        except Exception as e:
+            print("Oops [scrape_bulk_submission]!  Try again..." + str(e))
+
+
     @staticmethod
     def save_single(submissionRes, includeComments = True):
         try:
