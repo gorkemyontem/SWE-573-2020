@@ -50,7 +50,6 @@ class SubmissionAnalysis(models.Model):
     def __str__(self):
         return self.submission_id
 
-
 class CommentAnalysis(models.Model):
     id = models.AutoField(primary_key=True)
     comment_id = models.CharField(max_length=50)
@@ -76,8 +75,7 @@ class CommentAnalysis(models.Model):
 
     def __str__(self):
         return self.comment_id
-
-        
+    
 class TagMeAnalysis(models.Model):
     id = models.AutoField(primary_key=True)
     tagme_id = models.IntegerField(default=0)
@@ -92,7 +90,6 @@ class TagMeAnalysis(models.Model):
 
     def __str__(self):
         return self.title
-
 
 class TagMeSentenceAnalysis(models.Model):
     id = models.AutoField(primary_key=True)

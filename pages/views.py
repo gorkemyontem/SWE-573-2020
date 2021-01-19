@@ -10,33 +10,11 @@ from .forms import DashboardSearchForm
 from django.http import JsonResponse
 from django_q.tasks import async_task
 from django.core.cache import cache
-
-from scraper.service import RedditAuth, ScrapperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
 from analyser.models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis
-from analyser.service import AnalyserService
-
-class SchedulerPageView(View):
-
-    @method_decorator(login_required)
-    def get(self, request, *args, **kwargs):
-        # async_task('scraper.tasks.inform_everyone', hook="scraper.tasks.hook_after_inform_everyone")
-        return JsonResponse("DONE", safe =False)
-
 
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
-    
-    def dispatch(self, request, *args, **kwargs):
-        # for _ in range(500):
-        #     for comment in Comments.objects.all().filter(is_analized=False)[:750]: 
-        #         AnalyserService.analyse_comment(comment)
-
-            # for submission in Submission.objects.all().filter(is_analized=False)[:250]: 
-            #     AnalyserService.analyse_submission(submission)
-
-        print("DONE")
-        return super().dispatch(request, *args, **kwargs)
 
 class AboutPageView(TemplateView):
     template_name = 'pages/about.html'
@@ -54,12 +32,12 @@ class AnalysisPageView(DetailView):
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        # sol taraftaki bilgiler
         data = super().get_context_data(**kwargs)
         if cache.get(self.subreddit_detail_cache_key) is None: 
 
             submissions = Submission.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
             comments = Comments.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
-
 
             additional_context = { 
                 "submissionCount" : submissions,
@@ -72,10 +50,6 @@ class AnalysisPageView(DetailView):
 
         data['additional_context'] = additional_context
         return data
-
-
-
-   
    
 class DashboardPageView(TemplateView):
     template_name = 'pages/dashboard.html'
@@ -102,9 +76,7 @@ class DashboardPageView(TemplateView):
             if form.is_valid():
                 searchText = form.cleaned_data['searchText']
                 print('searchText:' + searchText)
-                async_task('scraper.tasks.create_schedule_once')
-                async_task('analyser.tasks.create_schedule_once')
-                
+ 
         return render(request, self.template_name)
  
 
@@ -124,11 +96,12 @@ class StatsPageView(TemplateView):
             authorRedditorCounts =  AuthorRedditor.objects.all().count()
             commentsCounts =  Comments.objects.all().count()
             sentenceAnalysisCounts =  SentenceAnalysis.objects.all().count()
+            analizedSentenceAnalysisCounts =  SentenceAnalysis.objects.all().filter(is_analized=True).count()
+            tagMeRatio = analizedSentenceAnalysisCounts /sentenceAnalysisCounts  * 100
             submissionAnalysisCounts =  SubmissionAnalysis.objects.all().count()
             commentAnalysisCounts =  CommentAnalysis.objects.all().count()
             submissionsRatio =  submissionAnalysisCounts / submissionCounts * 100
             commentsRatio =  commentAnalysisCounts / commentsCounts * 100
-            
             top5subredditsComments =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(id) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(id) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_comments sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
             top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(id) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(id) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
             counts = { 
@@ -139,6 +112,8 @@ class StatsPageView(TemplateView):
                 "sentenceAnalysis" : sentenceAnalysisCounts,
                 "submissionAnalysis" : submissionAnalysisCounts,
                 "commentAnalysis" : commentAnalysisCounts,
+                "analizedSentenceAnalysis" : analizedSentenceAnalysisCounts,
+                "tagMeRatio" : self.myround(tagMeRatio),
                 "submissionsRatio" : self.myround(submissionsRatio),
                 "commentsRatio" : self.myround(commentsRatio),
                 "top5subredditsComments" : top5subredditsComments,
