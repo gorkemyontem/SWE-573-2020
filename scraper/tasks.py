@@ -25,7 +25,7 @@ def crawl_subreddits():
         for callType in callTypes:
             async_task('scraper.tasks.crawl_subreddit', subredditId, callType, group='daily')
 
-def crawl_subreddit(subredditId, callType = 'hot', limit = 300):
+def crawl_subreddit(subredditId, callType = 'hot', limit = 200):
     print(20*'=' + subredditId + " " + callType + 20*'=')
     reddit = RedditAuth.public_auth()
     subredditRes = reddit.subreddit(subredditId)

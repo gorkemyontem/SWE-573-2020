@@ -5,6 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.core.serializers import serialize
+from django.core.serializers.json import DjangoJSONEncoder
+from django.core import serializers
+import json
 from django.core.cache import cache
 from analyser.models import CommentAnalysis
 from scraper.models import Subreddit
@@ -70,8 +73,9 @@ class DataWords(View):
 
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
-            self.cache_key = self.cache_key.format(self.kwargs.get('pk'))
-            subreddit = Subreddit.objects.get(pk=self.kwargs.get('pk'))
+            subredditId = self.kwargs.get('pk')
+            self.cache_key = self.cache_key.format(subredditId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
@@ -98,8 +102,9 @@ class DataBubble(View):
 
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
-            self.cache_key = self.cache_key.format(self.kwargs.get('pk'))
-            subreddit = Subreddit.objects.get(pk=self.kwargs.get('pk'))
+            subredditId = self.kwargs.get('pk')
+            self.cache_key = self.cache_key.format(subredditId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
@@ -117,6 +122,65 @@ class DataBubble(View):
         return JsonResponse({"success":True, "data": data}, status=200)
 
 
+class DataSubmissions(View):
+    template_name = None
+    cache_key = 'cache.data-submission-analysis-{0}-detail'
+    cache_time = 1*60*60*3 
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if self.request.method == "POST" and self.request.is_ajax():
+            subredditId = self.kwargs.get('pk')
+            self.cache_key = self.cache_key.format(subredditId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
+            data = {}
+            if subreddit is None:
+                return JsonResponse({"success": False}, status=400)
+            
+            if cache.get(self.cache_key) is None: 
+                submissions = Submission.objects.filter(subreddit_id = subreddit.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('-score').values('id', 'submission_id', 'name', 'title', 'url', 'selftext', 'num_comments', 'score', 'created_utc', 'redditor_id')[:100]
+                data['top100submissions'] =  json.dumps(list(submissions), cls=DjangoJSONEncoder)
+                cache.set(self.cache_key, data, self.cache_time)
+            else: 
+                data = cache.get(self.cache_key)
+
+        return JsonResponse({"success":True, "data": data}, status=200)
+
+
+class DataComments(View):
+    template_name = None
+    cache_key = 'cache.data-comments-analysis-{0}-{1}'
+    cache_time = 1*60*60*3 
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if self.request.method == "POST" and self.request.is_ajax():
+            subredditId = self.kwargs.get('pk')
+            submissionId = self.kwargs.get('submission_id')
+            self.cache_key = self.cache_key.format(subredditId, submissionId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
+            submission = Submission.objects.get(pk=submissionId)
+            data = {}
+            if subreddit is None or submission is None:
+                return JsonResponse({"success": False}, status=400)
+            
+            if cache.get(self.cache_key) is None: 
+
+                goodComments = Comments.objects.filter(submission_id = submission.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('-score')[:10]
+                badComments = Comments.objects.filter(submission_id = submission.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('score')[:10]
+                data['goodComments'] = list(goodComments)
+                data['badComments'] = list(badComments)
+                cache.set(self.cache_key, data, self.cache_time)
+            else: 
+                data = cache.get(self.cache_key)
+
+        return JsonResponse({"success":True, "data": data}, status=200)
     # def flattenNouns(self, nounsData):
     #     nouns = []
     #     for nounsArr in nounsData:
