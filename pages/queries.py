@@ -86,4 +86,3 @@ class Queries():
     @staticmethod
     def unzipTuple(arr):
         return [list(i) for i in zip(*arr)]
-

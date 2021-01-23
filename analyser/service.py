@@ -7,6 +7,7 @@ from scraper.models import Comments, Submission
 from textblob import TextBlob
 import time
 from django.core.cache import cache
+import re
 
 env = environ.Env()
 ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
@@ -69,9 +70,13 @@ class AnalyserService:
 
     @staticmethod
     def tagme_analysis_sentences(sentenceAnalysis):
+        tagsatoh = cache.get('tagsatoh')
+        tagsitop = cache.get('tagsitop')
+        tagsqtoz = cache.get('tagsqtoz')
+        tagsrest = cache.get('tagsrest')
         # print(sentenceAnalysis.id)
         try: 
-            for tagMeAnalysisId in AnalyserService.run_tagme_and_get_array(sentenceAnalysis.text): 
+            for tagMeAnalysisId in AnalyserService.run_tagme_and_get_array(sentenceAnalysis.text, tagsatoh, tagsitop, tagsqtoz, tagsrest): 
                 AnalysisModelService.save_tagme_sentence_analysis(tagMeAnalysisId, sentenceAnalysis)   
 
             sentenceAnalysis.is_analized = True
@@ -82,14 +87,14 @@ class AnalyserService:
 
             
     @staticmethod
-    def run_tagme_and_get_array(text):
+    def run_tagme_and_get_array(text, tagsatoh, tagsitop, tagsqtoz, tagsrest):
         # print('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
         response = requests.get('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
         registeredTagMeAnalysisList = []
         if response.status_code > 299:
             print("[run_tagme_and_get_array]: RESPONE ERROR", response.status_code, text)
             return registeredTagMeAnalysisList
-        tagsRaw = json.loads(response.text)
+        tagsRaw = json.loads(response.text) 
         if tagsRaw is None:
             print("[run_tagme_and_get_array]: tagsRaw NOT FOUND", text)
             return registeredTagMeAnalysisList
@@ -102,28 +107,40 @@ class AnalyserService:
             print("[run_tagme_and_get_array]: annotations empty []", text)
             return registeredTagMeAnalysisList
         
+
+        # t1 = time.perf_counter()
         for annotation in tagsRaw['annotations']:
             if 'title' in annotation:
-                tagmeanalysisId = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'])
+                tagmeanalysisId = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'], tagsatoh, tagsitop, tagsqtoz, tagsrest)
                 registeredTagMeAnalysisList.append(tagmeanalysisId)
             else: 
                 print("[run_tagme_and_get_array]: title NOT FOUND")
 
+        # t2 = time.perf_counter()
+        # print(f'all saving and checking tags step {round(t2-t1)} seconds')
         return registeredTagMeAnalysisList
 
 
 class AnalysisModelService:
 
     @staticmethod
-    def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title):
-        tags = cache.get('tags')
-        findings = [item for item in tags if item[1] == spot and item[2] == title]
+    def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title, tagsatoh, tagsitop, tagsqtoz, tagsrest):
+
+        if re.match('^[a-h,A-H]', spot): 
+            findings = [item for item in tagsatoh if item[1] == spot and item[2] == title]
+        if re.match('^[i-p,I-P]', spot):
+            findings = [item for item in tagsitop if item[1] == spot and item[2] == title]
+        if re.match('^[q-z,Q-Z]', spot): 
+            findings = [item for item in tagsqtoz if item[1] == spot and item[2] == title]
+        else: 
+            findings = [item for item in tagsrest if item[1] == spot and item[2] == title]
+
         if findings: 
             # print("*CACHE*")
             return findings[0][0] 
-        try:
+        try: 
             tagMeAnalysis = TagMeAnalysis.objects.get(spot=spot, title=title)
-            print("Exist")
+            # print("Exist")
             return tagMeAnalysis.id
         except TagMeAnalysis.DoesNotExist: 
             print("DoesNotExist")

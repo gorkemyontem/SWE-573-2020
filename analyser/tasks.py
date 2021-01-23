@@ -8,6 +8,7 @@ from analyser.models import SentenceAnalysis, TagMeAnalysis
 from scraper.models import Submission, Comments
 from .thread import DjangoConnectionThreadPoolExecutor
 import time
+import re
 
 def one_time_schedules(): 
     Schedule.objects.create(func='scraper.tasks.crawl_subreddits', schedule_type=Schedule.DAILY)
@@ -42,10 +43,22 @@ def polarity_analysis_comment_task():
 
 
 def tagme_analysis_sentences_task():
-    cache.set('tags', TagMeAnalysis.objects.all().values_list('id','spot','title'), 1*60*60*6)
+    tags =    TagMeAnalysis.objects.all().values_list('id','spot','title')
+    atoh = [item for item in tags if re.match('^[a-h,A-H]', item[1])] 
+    itop = [item for item in tags if re.match('^[i-p,I-P]', item[1])]
+    qtoz = [item for item in tags if re.match('^[q-z,Q-Z]', item[1])]
+    rest = [item for item in tags if not re.match('^[a-zA-Z]', item[1])]
+
+    cache.set('tagsatoh', atoh, 1*60*60*6)
+    cache.set('tagsitop', itop, 1*60*60*6)
+    cache.set('tagsqtoz', qtoz, 1*60*60*6)
+    cache.set('tagsrest', rest, 1*60*60*6)
+
+    # tags = cache.get('tags')
+
     for _ in range(10000):
         bulk = []
-        bulk.extend(SentenceAnalysis.objects.all().filter(is_analized= False)[:8])
+        bulk.extend(SentenceAnalysis.objects.all().filter(is_analized= False)[:10])
 
         t1 = time.perf_counter()
         with DjangoConnectionThreadPoolExecutor() as executor:
