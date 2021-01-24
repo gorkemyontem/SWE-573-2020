@@ -70,13 +70,10 @@ class AnalyserService:
 
     @staticmethod
     def tagme_analysis_sentences(sentenceAnalysis):
-        tagsatoh = cache.get('tagsatoh')
-        tagsitop = cache.get('tagsitop')
-        tagsqtoz = cache.get('tagsqtoz')
-        tagsrest = cache.get('tagsrest')
+        # tagCache = cache.get('tagCache')
         # print(sentenceAnalysis.id)
         try: 
-            for tagMeAnalysisId in AnalyserService.run_tagme_and_get_array(sentenceAnalysis.text, tagsatoh, tagsitop, tagsqtoz, tagsrest): 
+            for tagMeAnalysisId in AnalyserService.run_tagme_and_get_array(sentenceAnalysis.text): 
                 AnalysisModelService.save_tagme_sentence_analysis(tagMeAnalysisId, sentenceAnalysis)   
 
             sentenceAnalysis.is_analized = True
@@ -87,7 +84,7 @@ class AnalyserService:
 
             
     @staticmethod
-    def run_tagme_and_get_array(text, tagsatoh, tagsitop, tagsqtoz, tagsrest):
+    def run_tagme_and_get_array(text):
         # print('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
         response = requests.get('https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=' + env('TAGME_TOKEN') + "&text=" + text)
         registeredTagMeAnalysisList = []
@@ -111,7 +108,7 @@ class AnalyserService:
         # t1 = time.perf_counter()
         for annotation in tagsRaw['annotations']:
             if 'title' in annotation:
-                tagmeanalysisId = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'], tagsatoh, tagsitop, tagsqtoz, tagsrest)
+                tagmeanalysisId = AnalysisModelService.save_tagme_analysis(annotation['id'], annotation['spot'], annotation['start'], annotation['link_probability'], annotation['rho'], annotation['end'], annotation['title'])
                 registeredTagMeAnalysisList.append(tagmeanalysisId)
             else: 
                 print("[run_tagme_and_get_array]: title NOT FOUND")
@@ -124,20 +121,20 @@ class AnalyserService:
 class AnalysisModelService:
 
     @staticmethod
-    def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title, tagsatoh, tagsitop, tagsqtoz, tagsrest):
+    def save_tagme_analysis(tagme_id, spot, start, link_probability, rho, end, title):
+        # if re.match('^[a-h,A-H]', spot): 
+        #     findings = [item for item in tagCache['atoh'] if item[1] == spot and item[2] == title]
+        # if re.match('^[i-p,I-P]', spot):
+        #     findings = [item for item in tagCache['itop'] if item[1] == spot and item[2] == title]
+        # if re.match('^[q-z,Q-Z]', spot): 
+        #     findings = [item for item in tagCache['qtoz'] if item[1] == spot and item[2] == title]
+        # else: 
+        #     findings = [item for item in tagCache['rest'] if item[1] == spot and item[2] == title]
 
-        if re.match('^[a-h,A-H]', spot): 
-            findings = [item for item in tagsatoh if item[1] == spot and item[2] == title]
-        if re.match('^[i-p,I-P]', spot):
-            findings = [item for item in tagsitop if item[1] == spot and item[2] == title]
-        if re.match('^[q-z,Q-Z]', spot): 
-            findings = [item for item in tagsqtoz if item[1] == spot and item[2] == title]
-        else: 
-            findings = [item for item in tagsrest if item[1] == spot and item[2] == title]
-
-        if findings: 
-            # print("*CACHE*")
-            return findings[0][0] 
+        # print(findings)
+        # if findings: 
+        #     # print("*CACHE*")
+        #     return findings[0][0] 
         try: 
             tagMeAnalysis = TagMeAnalysis.objects.get(spot=spot, title=title)
             # print("Exist")

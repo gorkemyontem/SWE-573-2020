@@ -24,7 +24,7 @@ class SentenceAnalysis(models.Model):
     # Subjectivity lies between [0,1]. Subjectivity quantifies the amount of personal opinion and factual information contained in the text.
     # The higher subjectivity means that the text contains personal opinion rather than factual information. 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 class SubmissionAnalysis(models.Model):
     id = models.AutoField(primary_key=True)
@@ -98,4 +98,4 @@ class TagMeSentenceAnalysis(models.Model):
     created_utc = models.DateTimeField(default=timezone.now) # analysis time
 
     def __str__(self):
-        return self.id
+        return str(self.id)

@@ -21,6 +21,7 @@ django-q = "*"
 textblob = "*"
 croniter = "*"
 numpy = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.8.7"

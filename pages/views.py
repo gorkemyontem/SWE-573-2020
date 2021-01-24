@@ -1,4 +1,3 @@
-import praw
 import json
 from django.views.generic import TemplateView, View, DetailView
 from django.contrib.auth.decorators import login_required
@@ -23,8 +22,7 @@ class AnalysisPageView(DetailView):
     template_name = 'pages/analysis.html'
     model = Subreddit
     subreddit_detail_cache_key = 'cache.subreddit-{0}-detail'
-    subreddit_detail_cache_time = 10 # 3 saat
-    # subreddit_detail_cache_time = 1*60*60*3 # 3 saat
+    subreddit_detail_cache_time = 10 # 1*60*60*3 # 3 saat
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -50,7 +48,8 @@ class AnalysisPageView(DetailView):
 
         data['additional_context'] = additional_context
         return data
-   
+    
+
 class DashboardPageView(TemplateView):
     template_name = 'pages/dashboard.html'
     top5submissions_cache_key = 'cache.top5submissions'

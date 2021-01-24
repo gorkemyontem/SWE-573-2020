@@ -19,7 +19,7 @@ import requests
 import time
 import concurrent.futures
 from analyser.service import AnalyserService
-from scraper.service import ScrapperService
+from scraper.service import ScraperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
 from analyser.models import SentenceAnalysis, CommentAnalysis, TagMeAnalysis
 from analyser.tasks import one_time_schedules, polarity_analysis_submission_task, polarity_analysis_comment_task, tagme_analysis_sentences_task
@@ -39,7 +39,7 @@ class StatsScheduleAjax(View):
             bulk = []
             bulk.extend(Submission.objects.raw('SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 25'))
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(ScrapperService.scrape_single_submission, bulk)
+                executor.map(ScraperService.scrape_single_submission, bulk)
 
 
     @method_decorator(login_required)

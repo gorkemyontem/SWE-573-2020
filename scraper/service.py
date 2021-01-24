@@ -33,15 +33,14 @@ class RedditAuth:
         return reddit
 
 
-class ScrapperService:
+class ScraperService:
 
     @staticmethod
     def subreddit_search(searchText, limit):
         try:
             reddit = RedditAuth.public_auth()
-            print(searchText, limit)
             searchedSubmissions = reddit.subreddit("all").search(searchText, limit=limit) # API REQUEST
-            ScrapperService.save_all(searchedSubmissions, True)
+            ScraperService.save_all(searchedSubmissions, True)
         except Exception as e:
             print("Oops! [subreddit_search] Try again..." + str(e))
 
@@ -51,8 +50,8 @@ class ScrapperService:
             submissionIndex = 0
             for submissionRes in submissions:
                 submissionIndex += 1
-                ScrapperService.save_single(submissionRes, includeComments)
-                print(f'{submissionIndex} => {submissionRes.name}')
+                ScraperService.save_single(submissionRes, includeComments)
+                # print(f'{submissionIndex} => {submissionRes.name}')
 
         except Exception as e:
             print("Oops [save_all]!  Try again..." + str(e))
@@ -61,10 +60,9 @@ class ScrapperService:
     @staticmethod
     def scrape_single_submission(submission):
         try:
-            print(submission.submission_id)
             reddit = RedditAuth.public_auth()
             submissionRes = reddit.submission(id=submission.submission_id)
-            ScrapperService.save_single(submissionRes, True)
+            ScraperService.save_single(submissionRes, True)
         except Exception as e:
             print("Oops [scrape_bulk_submission]!  Try again..." + str(e))
 
@@ -103,10 +101,8 @@ class RedditModelService:
     def save_subreddit(subredditRes):
         try:
             subreddit = Subreddit.objects.get(subreddit_id=subredditRes.id)
-            print("====== exist subreddit ======")
             return subreddit, True
         except Subreddit.DoesNotExist:
-            print("====== NEW SUBREDDIT ======", subredditRes.display_name)
             subreddit = Subreddit()
             subreddit.subreddit_id = subredditRes.id
             subreddit.name  = subredditRes.name
@@ -126,14 +122,13 @@ class RedditModelService:
             subreddit.save()
             return subreddit, False
 
+
     @staticmethod
     def save_author(authorRes):
         try:
             redditor = AuthorRedditor.objects.get(redditor_id=authorRes.id)
-            print("====== exist author ======")
             return redditor, True
         except AuthorRedditor.DoesNotExist:
-            print("====== DoesNotExist author ======")
             redditor = AuthorRedditor()
             redditor.redditor_id = authorRes.id                                   
             redditor.name = authorRes.name                                   
@@ -147,13 +142,10 @@ class RedditModelService:
 
     @staticmethod
     def save_submission(submissionRes, subreddit, redditor):
-        # obj, created = AuthorRedditor.objects.get_or_create(first_name='John', last_name='Lennon')
         try:
             submission = Submission.objects.get(submission_id=submissionRes.id)
-            print("====== exist submision ======")
             return submission, True
         except Submission.DoesNotExist:
-            print("====== DoesNotExist submision ======")
             submission = Submission()
             submission.subreddit = subreddit
             submission.redditor = redditor
@@ -184,10 +176,8 @@ class RedditModelService:
     def save_comment(commentRes, subreddit, submission, redditor):
         try:
             comment = Comments.objects.get(comment_id=commentRes.id)
-            print("====== exist comment ======")
             return comment, True
         except Comments.DoesNotExist:
-            print("====== DoesNotExist comment ======")
             comment = Comments()
             comment.comment_id = commentRes.id
             comment.subreddit = subreddit
