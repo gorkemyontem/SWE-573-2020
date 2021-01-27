@@ -43,13 +43,6 @@ def polarity_analysis_comment_task(range_limit = 3000, loop_limit = 50):
 
 
 def tagme_analysis_sentences_task(range_limit = 100000, loop_limit = 25):
-    # tags =    TagMeAnalysis.objects.all().values_list('id','spot','title')
-    # tagCache = {}
-    # tagCache['atoh'] = [item for item in tags if re.match('^[a-h,A-H]', item[1])] 
-    # tagCache['itop'] = [item for item in tags if re.match('^[i-p,I-P]', item[1])]
-    # tagCache['qtoz'] = [item for item in tags if re.match('^[q-z,Q-Z]', item[1])]
-    # tagCache['rest'] = [item for item in tags if not re.match('^[a-zA-Z]', item[1])]
-    # cache.set('tagCache', tagCache, 1*60*60*6)
     for _ in range(range_limit):
         bulk = []
         bulk.extend(SentenceAnalysis.objects.all().filter(is_analized= False)[:loop_limit])

@@ -46,3 +46,23 @@ body {
     font-family: Montserrat, "Droid Sans", sans-serif;
 }
 
+.tab-content {
+  position: relative;
+}
+
+#overlay {
+  background-color: rgba(255,255,255,0.7);
+  position: absolute;  
+  margin: auto;
+  text-align: center !important;
+  padding: 200px;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+#cloud {
+    width: 400px;
+    height: 300px;
+}

@@ -4,8 +4,11 @@
 {% block title %}Home page{% endblock title %}
 
 {% block content-fluid %}
+{% csrf_token %}
+
 
 <div class="row">
+
     <div class="col-md-12 col-lg-2 mg-t-20 mg-lg-t-0">
         <div class="card">
             <img src="{% static 'images/reddit-logo.jpg' %}" class="card-img-top" alt="{{ object.name }}">
@@ -29,43 +32,71 @@
             </div>
         </div>
     </div>
+
+
     <div class="col-md-12 col-lg-10 mg-t-20 mg-lg-t-0">
-        <div class="row">
-            <div class="col-6 mg-t-20 mg-lg-t-0">
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab">Word</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab">Bubble</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab">Network</a>
+            </li>
+        </ul>
+        <br>
+        <br>
+        <div class="tab-content" id="myTabContent">
+            <div id="overlay">
+                <div class="spinner-border">
+                </div>
+            </div>
+            <div class="tab-pane fade show active" id="home" role="tabpanel">
                 <div class="az-content-label mg-b-5">Word Count</div>
                 <p class="mg-b-20">Most used nouns both in submissions and comments</p>
-                <div>
-                    <div class="az-content-label az-content-label-sm mg-b-15">Solid Color</div>
-                    <div class="ht-300 ht-lg-350">
-                        <canvas id="myChart" width="400" height="400"></canvas>
-                    </div>
+                <div class="ht-300 ht-lg-350">
+                    <canvas id="myChart" width="400" height="400"></canvas>
                 </div>
-
+      
+                <div id="cloud"></div>
+                <script>
+                    var words = [
+                        { text: "Lorem", weight: 13 },
+                        { text: "Ipsum", weight: 10.5 },
+                        { text: "Dolor", weight: 9.4 },
+                        { text: "Sit", weight: 8 },
+                        { text: "Amet", weight: 6.2 },
+                        { text: "Consectetur", weight: 45 },
+                        { text: "asd", weight: 35 },
+                        { text: "Adfdfgdipiscing", weight: 25 },
+                        { text: "Adipisdfgcing", weight: 15 },
+                        { text: "Adipiscuing", weight: 5 },
+                        { text: "Adipi98scing", weight: 75 },
+                        { text: "Adipis8t9cing", weight: 65 },
+                        { text: "Adipiscing", weight: 85 },
+                        { text: "Adipisci44ng", weight: 95 },
+                        { text: "Adipiscing", weight: 115 },
+                        { text: "Adipiscing", weight: 125 },
+                        { text: "Adipiscing", weight: 135 },
+                        { text: "Adipiscing", weight: 5 },
+                    ];
+                    $('#cloud').jQCloud(words);
+                </script>
             </div>
-            <div class="col-6 mg-t-20 mg-lg-t-0">
-
+            <div class="tab-pane fade" id="profile" role="tabpanel">
+                <div class="az-content-label mg-b-5">Packed Bubble Chart</div>
+                <p class="mg-b-20">Most frequent 100 entity in the subreddit, radius by count, color by polarity of the
+                    sentence that they are in. </p>
+                <div id="packed-bubbles"></div>
             </div>
+            <div class="tab-pane fade" id="contact" role="tabpanel">3asdasd</div>
         </div>
+
     </div>
 </div>
-<script type="text/javascript">     window.CSRF_TOKEN = "{{ csrf_token }}"; </script> 
-<script>
-    
-    $.ajax({
-        type: 'POST', 
-        url: '{% url 'post_friend' %}',
-        csrfmiddlewaretoken: '{{ csrf_token }}',
-        data: {data: 'some-data-to-send-to-views'},  // May need to add a CSRF Token as post data (eg: csrfmiddlewaretoken: "{{ csrf_token }}")
-        error: function() {
-            alert('There was an issue getting the data...');
-        },
-        success: function(data) {
-            // Accessing data passed back from request, handle it how you wish.
-            alert(data.foo);
-            alert(data.more);
-        }
-    });
 
-</script>
 
 {% endblock content-fluid %}

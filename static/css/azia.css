@@ -3080,7 +3080,7 @@ input[type="button"].btn-block {
     color: #7987a1;
     pointer-events: none;
     cursor: default; }
-
+/* 
 .nav-tabs {
   border-bottom: 1px solid #cdd4e0; }
   .nav-tabs .nav-item {
@@ -3103,7 +3103,7 @@ input[type="button"].btn-block {
   .nav-tabs .dropdown-menu {
     margin-top: -1px;
     border-top-left-radius: 0;
-    border-top-right-radius: 0; }
+    border-top-right-radius: 0; } */
 
 .nav-pills .nav-link {
   border-radius: 3px; }
@@ -7629,7 +7629,7 @@ a.text-dark:hover, a.text-dark:focus {
   color: #97a3b9; }
   .nav-dark .nav-link:hover, .nav-dark .nav-link:focus {
     color: #fff; }
-
+/* 
 .nav-tabs {
   border-bottom-width: 0; }
   .nav-tabs .nav-link {
@@ -7651,7 +7651,7 @@ a.text-dark:hover, a.text-dark:focus {
       background-color: #fff;
       color: #1c273c;
       font-weight: 500;
-      letter-spacing: -.1px; }
+      letter-spacing: -.1px; } */
 
 /* ###### 3.16 Progress ###### */
 .progress {
@@ -8262,7 +8262,7 @@ a.text-dark:hover, a.text-dark:focus {
       .az-nav-line.az-nav-dark .nav-link.active::before {
         background-color: #fff; }
 
-.az-nav-tabs {
+/* .az-nav-tabs {
   padding: 15px 15px 0;
   background-color: #cdd4e0; }
   .az-nav-tabs .lSSlideOuter {
@@ -8323,7 +8323,7 @@ a.text-dark:hover, a.text-dark:focus {
     .az-nav-tabs .tab-link.active {
       background-color: #fff;
       color: #1c273c;
-      font-weight: 500; }
+      font-weight: 500; } */
 
 .az-tab-pane {
   display: none; }
