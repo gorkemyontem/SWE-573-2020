@@ -31,7 +31,7 @@ SECRET_KEY = env.str('SECRET_KEY', 'sample_unsafe_secret')
 DEBUG = env('DEBUG')
 
 #  ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
+ALLOWED_HOSTS = ["*", "localhost", "0.0.0.0", "127.0.0.1"]
 
 
 # Application definition
