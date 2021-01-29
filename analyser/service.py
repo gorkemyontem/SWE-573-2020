@@ -10,7 +10,7 @@ from django.core.cache import cache
 import re
 
 env = environ.Env()
-ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
+ENV_DIR =  os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 environ.Env.read_env(ENV_DIR)
 
 class AnalyserService:

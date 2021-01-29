@@ -14,7 +14,7 @@ import environ
 from pathlib import Path
 
 env = environ.Env()
-ENV_DIR = os.path.dirname(os.path.dirname(__file__)) + '\.env'
+ENV_DIR =  os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 environ.Env.read_env(ENV_DIR)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -95,7 +95,6 @@ TEMPLATES = [
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -103,7 +102,11 @@ DATABASES = {
         'USER': env('DATABASE_USER'),
         'PASSWORD': env('DATABASE_PASSWORD'),
         'HOST': env('DATABASE_HOST'),
-        'PORT': env('DATABASE_PORT')
+        'PORT': env('DATABASE_PORT'),
+        "OPTIONS": {
+            "sslmode": "verify-ca",
+            "sslrootcert": os.path.join(BASE_DIR, "amazon-rds-ca-cert.pem")
+        }
     }
 }
 
