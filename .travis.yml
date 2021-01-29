@@ -15,10 +15,7 @@ script:
 
 deploy:
     provider: script
-    script: 
-            docker push $DOCKER_USERNAME/sentiment_analyser;
-            docker push registry.heroku.com/$HEROKU_APP/web;
-            heroku container:release web --app $HEROKU_APP
-        on:
+    script: docker push $DOCKER_USERNAME/sentiment_analyser; docker push registry.heroku.com/$HEROKU_APP/web; heroku container:release web --app $HEROKU_APP
+    on:
         branch: main
 
