@@ -1,1 +1,1 @@
-web: gunicorn locallibrary.wsgi --timeout 4800 --keep-alive 5 --log-file -
+web: gunicorn sentiment_analyser.wsgi --timeout 4800 --keep-alive 5 --log-file -
