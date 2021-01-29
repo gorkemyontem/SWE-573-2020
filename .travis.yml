@@ -1,8 +1,11 @@
-sudo: required
 language: python
 services:
     - docker
-
+before_install:
+    - sudo apt-get update
+    - docker --version
+    - docker-compose --version
+  
 before_script:
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
     - curl https://cli-assets.heroku.com/install.sh | sh #install heroku
@@ -10,12 +13,23 @@ before_script:
 
 script:
     - docker build -t sentiment-analyser .
+    - python manage.py test
+    - coverage run --omit='*/.virtualenvs/*' manage.py test
     - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
     - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
 
 deploy:
     provider: script
-    script: docker push $DOCKER_USERNAME/sentiment_analyser:latest; docker push registry.heroku.com/$HEROKU_APP/web; heroku container:release web --app $HEROKU_APP
+    script: 
+        - docker push $DOCKER_USERNAME/sentiment_analyser:latest
+        - docker push registry.heroku.com/$HEROKU_APP/web
+        - heroku container:release web --app $HEROKU_APP
+        # - docker-compose ${COMPOSE_FILES} build
+        # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
+        # - count=0; until docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null || (( count++ > 12 )); do echo "Waiting $count"; sleep 5; done
+        # - docker logs adopdockercompose_site_1
+        # - docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null
+        # - curl -sL -w "%{http_code}\\n" "http://localhost/adop-docker-compose/" -o /dev/null | grep "200" &> /dev/null
     on:
         branch: main
 
