@@ -18,7 +18,5 @@ RUN [ "python", "-c", "import nltk; nltk.download('all')" ]
 
 # TODO python manage.py qcluster &          -- https://github.com/Koed00/django-q/issues/487
 
-
-
 # Copy project
 COPY . /code/

@@ -1,24 +1,24 @@
 version: '3.8'
 
 services:
-  web:
-    build: .
-    command: python /code/manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/code
-    ports:
-      - 8000:8000
-    environment:
-      - DEBUG=${DEBUG}
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
-      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
-      - REDDIT_USER_AGENT=${REDDIT_USER_AGENT}
-      - REDDIT_USERNAME=${REDDIT_USERNAME}
-      - REDDIT_PASSWORD=${REDDIT_PASSWORD}
-      - TAGME_TOKEN=${TAGME_TOKEN}
+    web:
+        build: .
+        command: python /code/manage.py runserver 0.0.0.0:${PORT}
+        volumes:
+            - .:/code
+        ports:
+            - '${APP_PORT}:${PORT}'
+        environment:
+            - DEBUG=${DEBUG}
+            - SECRET_KEY=${SECRET_KEY}
+            - DATABASE_NAME=${DATABASE_NAME}
+            - DATABASE_USER=${DATABASE_USER}
+            - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            - DATABASE_HOST=${DATABASE_HOST}
+            - DATABASE_PORT=${DATABASE_PORT}
+            - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
+            - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+            - REDDIT_USER_AGENT=${REDDIT_USER_AGENT}
+            - REDDIT_USERNAME=${REDDIT_USERNAME}
+            - REDDIT_PASSWORD=${REDDIT_PASSWORD}
+            - TAGME_TOKEN=${TAGME_TOKEN}
