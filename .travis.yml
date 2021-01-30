@@ -32,7 +32,7 @@ deploy:
         # - heroku container:push web
         # - docker-compose ${COMPOSE_FILES} build
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
-    on:
+      on:
         branches: staging
     # - provider: heroku
     #   app: $HEROKU_APP
