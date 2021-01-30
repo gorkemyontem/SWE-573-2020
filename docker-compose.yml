@@ -3,7 +3,7 @@ version: '3.8'
 services:
     web:
         build: .
-        image: gorkemyontem/sentiment_analyser:lateset
+        image: gorkemyontem/sentiment_analyser:latest
         command: python /code/manage.py runserver 0.0.0.0:${PORT}
         volumes:
             - .:/code
