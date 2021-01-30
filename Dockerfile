@@ -1,6 +1,5 @@
 # Pull base image
 FROM python:3.8
-FROM heroku/heroku:20
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1

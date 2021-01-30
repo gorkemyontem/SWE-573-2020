@@ -17,9 +17,9 @@ before_script:
 
 script:
     - ls -la
-    # - docker-compose run web sh -c "python manage.py test"
-    # - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
-    # - docker-compose run web sh -c "coverage report"
+    - docker-compose run web sh -c "python manage.py test"
+    - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
+    - docker-compose run web sh -c "coverage report"
 
 deploy:
     - provider: script
