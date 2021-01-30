@@ -36,13 +36,10 @@ deploy:
         # - docker push registry.heroku.com/$HEROKU_APP/web
         # - docker-compose ${COMPOSE_FILES} build
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
-        # - count=0; until docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null || (( count++ > 12 )); do echo "Waiting $count"; sleep 5; done
-        # - docker logs adopdockercompose_site_1
-        # - docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null
-        # - curl -sL -w "%{http_code}\\n" "http://localhost/adop-docker-compose/" -o /dev/null | grep "200" &> /dev/null
       on:
         branch: main
     - provider: heroku
+      app: $HEROKU_APP
       api_key:
             secure: $HEROKU_API_KEY
       on:
