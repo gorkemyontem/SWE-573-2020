@@ -36,11 +36,10 @@ deploy:
         # - docker push registry.heroku.com/$HEROKU_APP/web
         # - docker-compose ${COMPOSE_FILES} build
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
-      on:
-        branch: main
     - provider: heroku
       app: $HEROKU_APP
       api_key:
             secure: $HEROKU_API_KEY
       on:
-        branch: staging
+        all_branches: true
+
