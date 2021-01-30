@@ -16,6 +16,16 @@ def one_time_schedules():
     Schedule.objects.create(func='analyser.tasks.polarity_analysis_submission_task', schedule_type=Schedule.CRON, cron = '0 */6 * * *')
     Schedule.objects.create(func='analyser.tasks.polarity_analysis_comment_task', schedule_type=Schedule.MINUTES, minutes=10)
 
+
+def multiprocess_comment_scraping(range_limit = 40): 
+    for _ in range(range_limit):
+        bulk = []
+        bulk.extend(Submission.objects.raw('SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 25'))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(ScraperService.scrape_single_submission, bulk)
+
+
+
 def polarity_analysis_submission_task(range_limit = 100, loop_limit = 50):
     for _ in range(range_limit):
         bulk = []

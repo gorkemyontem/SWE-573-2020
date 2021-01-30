@@ -22,7 +22,7 @@ from analyser.service import AnalyserService
 from scraper.service import ScraperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
 from analyser.models import SentenceAnalysis, CommentAnalysis, TagMeAnalysis
-from analyser.tasks import one_time_schedules, polarity_analysis_submission_task, polarity_analysis_comment_task, tagme_analysis_sentences_task
+from analyser.tasks import one_time_schedules, polarity_analysis_submission_task, polarity_analysis_comment_task, tagme_analysis_sentences_task, multiprocess_comment_scraping
 from .queries import Queries
 
 
@@ -33,14 +33,6 @@ environ.Env.read_env(ENV_DIR)
     
 class StatsScheduleAjax(View):
     template_name = None 
-
-    def multiprocess_comment_scraping(self): 
-        for _ in range(40):
-            bulk = []
-            bulk.extend(Submission.objects.raw('SELECT s.id, s.name, s.submission_id, s.title, s.num_comments FROM scraper_submission as s LEFT JOIN scraper_comments as cmnts ON cmnts.submission_id = s.id WHERE cmnts.submission_id IS NULL AND s.num_comments > 10 AND s.num_comments < 2000 ORDER BY RANDOM() LIMIT 25'))
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(ScraperService.scrape_single_submission, bulk)
-
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -55,7 +47,7 @@ class StatsScheduleAjax(View):
                 print(action)
                 result = {
                     'daily': one_time_schedules,
-                    'comment-scraping' : self.multiprocess_comment_scraping,
+                    'comment-scraping' : multiprocess_comment_scraping,
                     'submission-analysis' : polarity_analysis_submission_task,
                     'comment-analysis' : polarity_analysis_comment_task,
                     'tagme-analysis' : tagme_analysis_sentences_task,
@@ -141,8 +133,13 @@ class DataSubmissions(View):
                 return JsonResponse({"success": False}, status=400)
             
             if cache.get(self.cache_key) is None: 
-                submissions = Submission.objects.filter(subreddit_id = subreddit.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('-score').values('id', 'submission_id', 'name', 'title', 'url', 'selftext', 'num_comments', 'score', 'created_utc', 'redditor_id')[:100]
-                data['top100submissions'] =  json.dumps(list(submissions), cls=DjangoJSONEncoder)
+                # submissions = Submission.objects.filter(subreddit_id = subreddit.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('-score').values('id', 'submission_id', 'name', 'title', 'url', 'selftext', 'num_comments', 'score', 'created_utc', 'redditor_id')[:100]
+                top10submissions = Queries.top10submissions(subredditId)
+                data['top10submissions'] = top10submissions
+                for subs in top10submissions:
+                    print(subs['submission_id']) 
+                    data[subs['submission_id']] = Queries.top10comments(subs['id'])
+
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
                 data = cache.get(self.cache_key)

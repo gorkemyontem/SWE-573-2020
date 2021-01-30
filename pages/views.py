@@ -11,6 +11,7 @@ from django_q.tasks import async_task
 from django.core.cache import cache
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
 from analyser.models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis
+from .queries import Queries
 
 class HomePageView(TemplateView):
     template_name = 'pages/home.html'
@@ -62,7 +63,7 @@ class DashboardPageView(TemplateView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         if cache.get(self.top5submissions_cache_key) is None: 
-            top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, (SELECT Count(id) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(id) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
+            top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, (SELECT Count(*) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(*) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
             cache.set(self.top5submissions_cache_key, top5subredditsSubmissions, self.top5submissions_cache_time)
         else: 
             top5subredditsSubmissions = cache.get(self.top5submissions_cache_key)
@@ -87,22 +88,23 @@ class StatsPageView(TemplateView):
     def myround(self, x, base=5):
         return base * round(round(x)/base)
         
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs): 
         data = super().get_context_data(**kwargs)
         if cache.get(self.db_counts_cache_key) is None: 
-            subredditCounts =  Subreddit.objects.all().count()
-            submissionCounts =  Submission.objects.all().count()
-            authorRedditorCounts =  AuthorRedditor.objects.all().count()
-            commentsCounts =  Comments.objects.all().count()
-            sentenceAnalysisCounts =  SentenceAnalysis.objects.all().count()
-            analizedSentenceAnalysisCounts =  SentenceAnalysis.objects.all().filter(is_analized=True).count()
-            tagMeRatio = analizedSentenceAnalysisCounts /sentenceAnalysisCounts  * 100
-            submissionAnalysisCounts =  SubmissionAnalysis.objects.all().count()
-            commentAnalysisCounts =  CommentAnalysis.objects.all().count()
-            submissionsRatio =  submissionAnalysisCounts / submissionCounts * 100
-            commentsRatio =  commentAnalysisCounts / commentsCounts * 100
-            top5subredditsComments =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(id) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(id) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_comments sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
-            top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(id) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(id) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
+            stats = Queries.stats()
+            subredditCounts = stats["scraper_subreddit"]
+            submissionCounts = stats["scraper_submission"] 
+            authorRedditorCounts = stats["scraper_authorredditor"]
+            commentsCounts = stats["scraper_comments"]
+            sentenceAnalysisCounts = stats["analyser_sentenceanalysis"]
+            analizedSentenceAnalysisCounts = sentenceAnalysisCounts - SentenceAnalysis.objects.all().filter(is_analized=False).count() # is_analized=True buluyor aslinda
+            tagMeRatio = analizedSentenceAnalysisCounts / sentenceAnalysisCounts  * 100
+            submissionAnalysisCounts = stats["analyser_submissionanalysis"]
+            commentAnalysisCounts = stats["analyser_commentanalysis"]
+            submissionsRatio = submissionAnalysisCounts / submissionCounts * 100
+            commentsRatio = commentAnalysisCounts / commentsCounts * 100
+            top5subredditsComments =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(*) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(*) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_comments sc GROUP BY sc.subreddit_id ORDER BY Count(sc.subreddit_id) DESC LIMIT 5)')
+            top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, s.subscribers, s.title, s.url, (SELECT Count(*) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(*) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY Count(sc.subreddit_id) DESC LIMIT 5)')
             counts = { 
                 "subreddit" : subredditCounts,
                 "submission" : submissionCounts,
@@ -125,7 +127,7 @@ class StatsPageView(TemplateView):
         data['db_counts'] = counts
         return data
 
-      # @staticmethod
+    # @staticmethod
     # def post(request):
     #     print(request)
     #     return super().dispatch()
