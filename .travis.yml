@@ -14,18 +14,14 @@ before_install:
 
 before_script:
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-#     - curl https://cli-assets.heroku.com/install.sh | sh #install heroku
-#     - docker login --username=$HEROKU_LOGIN --password=$HEROKU_API_KEY registry.heroku.com
+    - curl https://cli-assets.heroku.com/install.sh | sh #install heroku
+    - docker login --username=$HEROKU_LOGIN --password=$HEROKU_API_KEY registry.heroku.com
 
 script:
-    # - docker build -t sentiment-analyser .
-    # - docker-compose -t sentiment-analyser .
     - ls -la
-    - docker-compose run web sh -c "python manage.py test"
-    - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
-    - docker-compose run web sh -c "coverage report"
-    # - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
-    # - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
+    # - docker-compose run web sh -c "python manage.py test"
+    # - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
+    # - docker-compose run web sh -c "coverage report"
 
 deploy:
     - provider: script
@@ -36,6 +32,8 @@ deploy:
         # - heroku container:push web
         # - docker-compose ${COMPOSE_FILES} build
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
+    on:
+        branches: staging
     # - provider: heroku
     #   app: $HEROKU_APP
     #   api_key: $HEROKU_API_KEY
