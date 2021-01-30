@@ -12,11 +12,11 @@ before_script:
     - docker login --username=$HEROKU_LOGIN --password=$HEROKU_API_KEY registry.heroku.com
 
 script:
-    - docker build -t sentiment-analyser .
+    # - docker build -t sentiment-analyser .
+    # - docker-compose -t sentiment-analyser .
     - ls -la
-    - env
-    - pipenv run python manage.py test
-    - coverage run --omit='*/.virtualenvs/*' manage.py test
+    - docker-compose run app sh -c "python manage.py test"
+    - docker-compose run app sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
     - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
     - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
 
