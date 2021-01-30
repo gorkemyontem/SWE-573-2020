@@ -38,8 +38,7 @@ deploy:
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
     - provider: heroku
       app: $HEROKU_APP
-      api_key:
-            secure: $HEROKU_API_KEY
+      api_key: $HEROKU_API_KEY
       on:
         all_branches: true
 
