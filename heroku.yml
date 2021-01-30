@@ -1,6 +1,10 @@
 build:
   docker:
-    release:
-       dockerfile: Dockerfile
-       target: builder
     web: Dockerfile
+run:
+  web: gunicorn sentiment_analyser.wsgi --timeout 4800 --keep-alive 5 --log-file -
+
+release:
+  image: web
+  command:
+    - python manage.py collectstatic --noinput
