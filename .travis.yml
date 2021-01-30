@@ -21,8 +21,8 @@ script:
     # - docker build -t sentiment-analyser .
     # - docker-compose -t sentiment-analyser .
     - ls -la
-    - docker-compose run app sh -c "python manage.py test"
-    - docker-compose run app sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
+    - docker-compose run web sh -c "python manage.py test"
+    - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
     - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
     - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
 
