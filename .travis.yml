@@ -31,14 +31,14 @@ deploy:
     - provider: script
       script: 
         - docker-compose push
+        - docker-compose push registry.heroku.com/$HEROKU_APP/web
+        - heroku container:release web --app $HEROKU_APP
         # - heroku container:push web
-        # - heroku container:release web --app $HEROKU_APP
-        # - docker push registry.heroku.com/$HEROKU_APP/web
         # - docker-compose ${COMPOSE_FILES} build
         # - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
-    - provider: heroku
-      app: $HEROKU_APP
-      api_key: $HEROKU_API_KEY
-      on:
-        all_branches: true
+    # - provider: heroku
+    #   app: $HEROKU_APP
+    #   api_key: $HEROKU_API_KEY
+    #   on:
+    #     all_branches: true
 
