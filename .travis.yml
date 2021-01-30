@@ -12,8 +12,8 @@ before_install:
     - chmod +x docker-compose
     - sudo mv docker-compose /usr/local/bin
 
-# before_script:
-#     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+before_script:
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
 #     - curl https://cli-assets.heroku.com/install.sh | sh #install heroku
 #     - docker login --username=$HEROKU_LOGIN --password=$HEROKU_API_KEY registry.heroku.com
 
@@ -23,6 +23,7 @@ script:
     - ls -la
     - docker-compose run web sh -c "python manage.py test"
     - docker-compose run web sh -c "coverage run --omit='*/.virtualenvs/*' manage.py test"
+    - docker-compose run web sh -c "coverage report"
     # - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
     # - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
 
