@@ -14,8 +14,9 @@ before_script:
 script:
     - docker build -t sentiment-analyser .
     - ls -la
-    - python ./code/manage.py test
-    - coverage run --omit='*/.virtualenvs/*' ./code/manage.py test
+    - env
+    - pipenv run python manage.py test
+    - coverage run --omit='*/.virtualenvs/*' manage.py test
     - docker tag sentiment-analyser $DOCKER_USERNAME/sentiment_analyser:latest
     - docker tag sentiment-analyser registry.heroku.com/$HEROKU_APP/web
 
