@@ -151,3 +151,18 @@ table {
     table-layout: fixed;
     word-wrap: break-word;
 }
+
+.sa-link,
+a.nav-link{
+    color:#031b4e;
+    font-weight: 500;
+}
+.sa-link:hover,
+a.nav-link:hover {
+    color:#042467;
+    font-weight: 500;
+}
+
+.sa-link {
+    text-decoration: underline;
+}

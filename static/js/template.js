@@ -15,7 +15,7 @@ var mediaTemplate = (mediaArr) => {
             <h5 class="mt-0 mb-2" title="${getTitle('title')}">${media.title}</h5>
             <div class="icon-set">
                 <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
-                    <span title="${getTitle('id')}">#${media.submission_id}</span>
+                    <span class="sa-link" title="${getTitle('id')}">#${media.submission_id}</span>
                 </a>
                 <span title="${getTitle('date')}"><i class="fas fa-calendar-day"></i>&nbsp;${dateFormat(media.created_utc)}</span>
             </div>
@@ -29,12 +29,21 @@ var mediaTemplate = (mediaArr) => {
             </div>
             <p class="sa-media-content">${media.selftext.substring(0, 500) + '...'}</p>
             <div class="clearfix">
-                <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 float-right" id="btn-${media.id}" onclick="triggerPopup('${media.id}','${media.submission_id}', 'sentences_submissions')">
+                <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 float-right" data-toggle="collapse" data-target="#collapse-${media.id}">
+                    Show Top 10 Comments
+                </button>
+                <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 mr-2 float-right" id="btn-${media.id}" onclick="triggerPopup('${media.id}','${media.submission_id}', 'sentences_submissions')">
                     Show Sentence Analysis and Entities
                 </button>
             </div>
             <div class="sa-media-children">
-                ${mediaChildrenTemplate(media.children)}
+                <div class="collapse" id="collapse-${media.id}">
+                    <div class="card card-body">
+                        ${mediaChildrenTemplate(media.children)}
+                    </div>
+                </div>
+
+
             </div>
         </div>
     </li>`
@@ -49,7 +58,7 @@ var mediaChildrenTemplate = (children) => {
         <div class="media-body">
                 <div class="icon-set">
                     <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
-                        <span title="${getTitle('id')}">#${media.comment_id}</span>
+                        <span class="sa-link" title="${getTitle('id')}">#${media.comment_id}</span>
                     </a>
                     <span title="${getTitle('date')}"><i class="fas fa-calendar-day"></i>&nbsp;${dateFormat(media.created_utc)}</span>
                 </div>
@@ -159,7 +168,7 @@ var createPopup = (id) => {
     var element = document.createElement('div');
     element.classList.add('popup-modal', 'shadow');
     element.setAttribute('id', 'popup-' + id);
-    element.innerHTML = `<i class="fas fa-2x fa-times text-white bg-primary p-3 popup-modal__close"></i><h1 class="font-weight-bold">Words & Entities</h1><div class="popup-body"></div>`;
+    element.innerHTML = `<i class="fas fa-2x fa-times text-white bg-primary p-3 popup-modal__close"></i><h1 class="font-weight-bold">Sentence Analysis</h1><div class="popup-body"></div>`;
     return element;
 };
 
