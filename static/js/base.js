@@ -10,11 +10,11 @@ if (parseInt(getSubredditId())) {
                 return;
             }
             data = body.data;
-            data.top10submissions.forEach(el => el.children = data[el.submission_id]);
-            render(mediaTemplate(data.top10submissions), '#submissions-content')
+            data.top10submissions.forEach((el) => (el.children = data[el.submission_id]));
+            render(mediaTemplate(data.top10submissions), '#submissions-content');
+            removeOverlay('submission');
         });
 }
-
 // WORDS BAR CHART
 if (parseInt(getSubredditId())) {
     fetch(requestBase('/api/ajax/words/' + getSubredditId() + '/'), postMethod)
@@ -54,7 +54,7 @@ if (parseInt(getSubredditId())) {
                     },
                 },
             });
-            removeOverlay();
+            removeOverlay('word');
         });
 }
 // PACKED BUBBLE CHART
@@ -123,10 +123,53 @@ if (parseInt(getSubredditId())) {
                 },
                 series: [negative, positive, netural],
             });
+            removeOverlay('bubble');
         });
 }
 
-function removeOverlay() {
-    var overlay = document.getElementById('overlay');
+// WORDCLOUD
+if (parseInt(getSubredditId())) {
+    fetch(requestBase('/api/ajax/wordcloud/' + getSubredditId() + '/'), postMethod)
+        .then((res) => responseToJson(res))
+        .then((body) => {
+            var wordCloudData = body.data.wordCloud;
+            var entityCloudData = body.data.entityCloud;
+            var wordsAndWeights = wordCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
+            var entitiesAndWeights = entityCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
+            var coefficientWord = 1000 / Math.sqrt(Math.max(...wordsAndWeights.map((e) => e.weight)));
+            var coefficientEntity = 1000 / Math.sqrt(Math.max(...entitiesAndWeights.map((e) => e.weight)));
+            wordsAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientWord));
+            entitiesAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientEntity));
+            Highcharts.chart('container-wordcloud', {
+                series: [
+                    {
+                        type: 'wordcloud',
+                        data: wordsAndWeights,
+                        name: 'Ratio',
+                    },
+                ],
+                title: {
+                    text: '',
+                },
+            });
+
+            Highcharts.chart('container-entitycloud', {
+                series: [
+                    {
+                        type: 'wordcloud',
+                        data: entitiesAndWeights,
+                        name: 'Ratio',
+                    },
+                ],
+                title: {
+                    text: '',
+                },
+            });
+            removeOverlay('cloud');
+        });
+}
+
+function removeOverlay(id) {
+    var overlay = document.getElementById('overlay-' + id);
     overlay.style.display = 'none';
 }

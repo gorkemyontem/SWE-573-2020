@@ -19,10 +19,7 @@ class SentenceAnalysis(models.Model):
     reddit_created_utc =  models.DateTimeField(null=True, blank=True) # submission or comment created time
     is_analized = models.BooleanField(default=False)
     created_utc = models.DateTimeField(default=timezone.now) # analyse created time
-    # Polarity lies between [-1,1], -1 defines a negative sentiment and 1 defines a positive sentiment. 
-    # Negation words reverse the polarity. 
-    # Subjectivity lies between [0,1]. Subjectivity quantifies the amount of personal opinion and factual information contained in the text.
-    # The higher subjectivity means that the text contains personal opinion rather than factual information. 
+
     def __str__(self):
         return str(self.id)
 
@@ -85,8 +82,8 @@ class TagMeAnalysis(models.Model):
     rho = models.FloatField(default=0.0)
     end = models.IntegerField(default=0)
     title = models.CharField(max_length=500)
-
     created_utc = models.DateTimeField(default=timezone.now) # analysis time
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.title

@@ -7,47 +7,46 @@ var render = (template, selector) => {
 var mediaTemplate = (mediaArr) => {
     templates = mediaArr.map(
         (media) => `
-    <li class="media sa-media-parent" id="submission-${media.id}">
-        <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
-            <img src="${findImage(media.url, media.permalink)}" class="img-small img-thumbnail mr-3">
-        </a>
-        <div class="media-body">
-            <h5 class="mt-0 mb-2" title="${getTitle('title')}">${media.title}</h5>
-            <div class="icon-set">
-                <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
-                    <span class="sa-link" title="${getTitle('id')}">#${media.submission_id}</span>
-                </a>
-                <span title="${getTitle('date')}"><i class="fas fa-calendar-day"></i>&nbsp;${dateFormat(media.created_utc)}</span>
-            </div>
-            <div class="icon-set">
-                <span title="${getTitle('score')}"><i class="fas fa-star"></i>&nbsp;${media.score}</span>
-                <span title="${getTitle('polarity')}"><i class="fas fa-flag"></i>&nbsp;${round(media.polarity)}</span>
-                <span title="${getTitle('avg_polarity')}"><i class="far fa-circle"></i>&nbsp;${round(media.avg_polarity)}</span>
-                <span title="${getTitle('classification')}">&nbsp;${classify(media.classification)}</span>
-                <span title="${getTitle('subjectivity')}"><i class="fas fa-head-side-cough"></i>&nbsp;${round(media.subjectivity)}</span>
-                <span title="${getTitle('num_comments')}"><i class="fas fa-list-ol"></i>&nbsp;${media.num_comments}</span>
-            </div>
-            <p class="sa-media-content">${media.selftext.substring(0, 500) + '...'}</p>
-            <div class="clearfix">
-                <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 float-right" data-toggle="collapse" data-target="#collapse-${media.id}">
-                    Show Top 10 Comments
-                </button>
-                <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 mr-2 float-right" id="btn-${media.id}" onclick="triggerPopup('${media.id}','${media.submission_id}', 'sentences_submissions')">
-                    Show Sentence Analysis and Entities
-                </button>
-            </div>
-            <div class="sa-media-children">
-                <div class="collapse" id="collapse-${media.id}">
-                    <div class="card card-body">
-                        ${mediaChildrenTemplate(media.children)}
+                <li class="media sa-media-parent" id="submission-${media.id}">
+                    <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
+                        <img src="${findImage(media.url, media.permalink)}" class="img-small img-thumbnail mr-3">
+                    </a>
+                    <div class="media-body">
+                        <h5 class="mt-0 mb-2" title="${getTitle('title')}">${media.title}</h5>
+                        <div class="icon-set">
+                            <a class="mr-3" target="_blank" href="${addRedditBaseUrl(media.permalink)}">
+                                <span class="sa-link" title="${getTitle('id')}">#${media.submission_id}</span>
+                            </a>
+                            <span title="${getTitle('date')}"><i class="fas fa-calendar-day"></i>&nbsp;${dateFormat(media.created_utc)}</span>
+                        </div>
+                        <div class="icon-set">
+                            <span title="${getTitle('score')}"><i class="fas fa-star"></i>&nbsp;${media.score}</span>
+                            <span title="${getTitle('polarity')}"><i class="fas fa-flag"></i>&nbsp;${round(media.polarity)}</span>
+                            <span title="${getTitle('avg_polarity')}"><i class="far fa-circle"></i>&nbsp;${round(media.avg_polarity)}</span>
+                            <span title="${getTitle('classification')}">&nbsp;${classify(media.classification)}</span>
+                            <span title="${getTitle('subjectivity')}"><i class="fas fa-head-side-cough"></i>&nbsp;${round(media.subjectivity)}</span>
+                            <span title="${getTitle('num_comments')}"><i class="fas fa-list-ol"></i>&nbsp;${media.num_comments}</span>
+                        </div>
+                        <p class="sa-media-content">${media.selftext.substring(0, 500) + '...'}</p>
+                        <div class="clearfix">
+                            <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 float-right" data-toggle="collapse" data-target="#collapse-${media.id}">
+                                Show Top 10 Comments
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary shadow p-2 px-3 mr-2 float-right" id="btn-${media.id}" onclick="triggerPopup('${media.id}','${media.submission_id}', 'sentences_submissions')">
+                                Show Sentence Analysis and Entities
+                            </button>
+                        </div>
+                        <div class="sa-media-children">
+                            <div class="collapse" id="collapse-${media.id}">
+                                <div class="card card-body">
+                                    ${mediaChildrenTemplate(media.children)}
+                                </div>
+                            </div>
+
+
+                        </div>
                     </div>
-                </div>
-
-
-            </div>
-        </div>
-    </li>`
-    );
+                </li>`);
     return `<ul class="list-unstyled">${templates.join('')}</ul>`;
 };
 
@@ -144,23 +143,22 @@ var triggerPopup = (id, reddit_id, type) => {
     fetchData(type, reddit_id).then((res) => {
         const body = document.querySelector('.popup-body');
         body.innerHTML = `
-                        <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th style="width: 25%">&nbsp;Sentence</th>
-                                <th style="width: 5%">Polarity</th>
-                                <th style="width: 5%">Classification</th>
-                                <th style="width: 5%">Subjectivity</th>
-                                <th style="width: 12%">Noun_phrases</th>
-                                <th style="width: 16%">Words</th>
-                                <th style="width: 32%">Entities</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRowTemplate(res)}
-                        </tbody>
-                        </table>
-                        `;
+            <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 25%">&nbsp;Sentence</th>
+                    <th style="width: 5%">Polarity</th>
+                    <th style="width: 5%">Classification</th>
+                    <th style="width: 5%">Subjectivity</th>
+                    <th style="width: 12%">Noun_phrases</th>
+                    <th style="width: 16%">Words</th>
+                    <th style="width: 32%">Entities</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRowTemplate(res)}
+            </tbody>
+            </table>`;
     });
 };
 

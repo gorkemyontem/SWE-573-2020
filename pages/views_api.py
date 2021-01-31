@@ -1,3 +1,9 @@
+import json
+import os
+import environ
+import requests
+import time
+import concurrent.futures
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.http import HttpResponse
@@ -7,25 +13,17 @@ from django.views import View
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core import serializers
-import json
 from django.core.cache import cache
 from analyser.models import CommentAnalysis
 from scraper.models import Subreddit
 from textblob import TextBlob, Word
 from collections import Counter
-import os
-import environ
-import requests
-import time
-import concurrent.futures
 from analyser.service import AnalyserService
 from scraper.service import ScraperService
 from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
 from analyser.models import SentenceAnalysis, CommentAnalysis, TagMeAnalysis
 from analyser.tasks import one_time_schedules, polarity_analysis_submission_task, polarity_analysis_comment_task, tagme_analysis_sentences_task, multiprocess_comment_scraping
 from .queries import Queries
-
-
 
 env = environ.Env()
 ENV_DIR =  os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -79,6 +77,34 @@ class DataWords(View):
             else: 
                 data = cache.get(self.cache_key)
 
+        return JsonResponse({"success":True, "data": data}, status=200)
+
+class DataWordCloud(View):
+    template_name = None
+    cache_key = 'cache.data-word-clod-analysis-{0}'
+    cache_time = 1*60*60*3 # 3 saat
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if self.request.method == "POST" and self.request.is_ajax():
+            subredditId = self.kwargs.get('pk')
+            self.cache_key = self.cache_key.format(subredditId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
+            data = {}
+            if subreddit is None:
+                return JsonResponse({"success": False}, status=400)
+
+            if cache.get(self.cache_key) is None: 
+                wordCloud = Queries.wordCloud(subreddit.subreddit_id)
+                entityCloud = Queries.entityCloud(subreddit.subreddit_id)
+                data['wordCloud'] = wordCloud
+                data['entityCloud'] = entityCloud
+                cache.set(self.cache_key, data, self.cache_time)
+            else: 
+                data = cache.get(self.cache_key)
         return JsonResponse({"success":True, "data": data}, status=200)
 
 
@@ -190,6 +216,3 @@ class DataSentencesComments(View):
                 data = cache.get(self.cache_key)
 
         return JsonResponse({"success":True, "data": data}, status=200)
-
-
-

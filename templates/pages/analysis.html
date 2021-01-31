@@ -53,55 +53,53 @@
         <br>
         <br>
         <div class="tab-content" id="myTabContent">
-            <div id="overlay">
-                <div class="spinner-border">
-                </div>
-            </div>
+
             <div class="tab-pane fade show active" id="tabular" role="tabpanel">
-                
-
-                <div id="submissions-content"> </div>
-
-
-
+                <div class="sa-overlay-wrapper">
+                    <div class="sa-overlay" id="overlay-submission">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <div class="az-content-label mg-b-5">Top Submissions</div>
+                    <p class="mg-b-20">Top 10 <strong>submissions</strong> of {{ object.display_name }} subreddit</p>
+                    <div id="submissions-content"> </div>
+                </div>
             </div>
             <div class="tab-pane fade" id="word" role="tabpanel">
-                <div class="az-content-label mg-b-5">Word Count</div>
-                <p class="mg-b-20">Most used nouns both in submissions and comments</p>
-                <div class="ht-300 ht-lg-350">
-                    <canvas id="myChart" width="400" height="400"></canvas>
+                <div class="sa-overlay-wrapper">
+                    <div class="sa-overlay" id="overlay-word">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <div class="az-content-label mg-b-5">Word Count</div>
+                    <p class="mg-b-20">Most used <strong>entities</strong> both in submissions and comments</p>
+                    <div class="ht-300 ht-lg-350">
+                        <canvas id="myChart" width="400" height="400"></canvas>
+                    </div>
                 </div>
-      
-                <div id="cloud"></div>
-                <script>
-                    var words = [
-                        { text: "Lorem", weight: 13 },
-                        { text: "Ipsum", weight: 10.5 },
-                        { text: "Dolor", weight: 9.4 },
-                        { text: "Sit", weight: 8 },
-                        { text: "Amet", weight: 6.2 },
-                        { text: "Consectetur", weight: 45 },
-                        { text: "asd", weight: 35 },
-                        { text: "Adfdfgdipiscing", weight: 25 },
-                        { text: "Adipisdfgcing", weight: 15 },
-                        { text: "Adipiscuing", weight: 5 },
-                        { text: "Adipi98scing", weight: 75 },
-                        { text: "Adipis8t9cing", weight: 65 },
-                        { text: "Adipiscing", weight: 85 },
-                        { text: "Adipisci44ng", weight: 95 },
-                        { text: "Adipiscing", weight: 115 },
-                        { text: "Adipiscing", weight: 125 },
-                        { text: "Adipiscing", weight: 135 },
-                        { text: "Adipiscing", weight: 5 },
-                    ];
-                    $('#cloud').jQCloud(words);
-                </script>
+                <div class="az-content-label mg-b-5">Word Cloud</div>
+                <div class="sa-overlay-wrapper">
+                    <div class="sa-overlay" id="overlay-cloud">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <p class="mg-b-20">Top 250 Most used <strong>entity</strong> both in submissions and comments</p>
+                    <figure class="highcharts-figure">
+                        <div id="container-entitycloud"></div>
+                    </figure>
+                    <p class="mg-b-20">Top 250 Most used <strong>words</strong> both in submissions and comments</p>
+                    <figure class="highcharts-figure">
+                        <div id="container-wordcloud"></div>
+                    </figure>
+                </div>
             </div>
             <div class="tab-pane fade" id="profile" role="tabpanel">
-                <div class="az-content-label mg-b-5">Packed Bubble Chart</div>
-                <p class="mg-b-20">Most frequent 100 entity in the subreddit, radius by count, color by polarity of the
-                    sentence that they are in. </p>
-                <div id="packed-bubbles"></div>
+                <div class="sa-overlay-wrapper">
+                    <div class="sa-overlay" id="overlay-bubble">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <div class="az-content-label mg-b-5">Packed Bubble Chart</div>
+                    <p class="mg-b-20">Most frequent 100 <strong>entity</strong> in the subreddit, radius by count,
+                        color by polarity of the sentence that they are in. </p>
+                    <div id="packed-bubbles"></div>
+                </div>
             </div>
             <div class="tab-pane fade" id="contact" role="tabpanel">3asdasd</div>
         </div>
