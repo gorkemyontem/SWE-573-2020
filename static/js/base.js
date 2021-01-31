@@ -1,9 +1,14 @@
-var ctx = document.getElementById('myChart');
-if (ctx) ctx.getContext('2d');
+if (parseInt(getSubredditId())) {
+    runTabular();
+    runBar();
+    runWordCloud();
+    runBubble();
+
+}
 
 // TABULAR DATA
-if (parseInt(getSubredditId())) {
-    fetch(requestBase('/api/ajax/submissions/' + getSubredditId() + '/'), postMethod)
+async function runTabular() {
+    await fetch(requestBase('/api/ajax/submissions/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
             if (!body) {
@@ -12,16 +17,21 @@ if (parseInt(getSubredditId())) {
             data = body.data;
             data.top10submissions.forEach((el) => (el.children = data[el.submission_id]));
             render(mediaTemplate(data.top10submissions), '#submissions-content');
-            removeOverlay('submission');
-        });
+        })
+        .finally((_) => removeOverlay('submission'));
 }
+
 // WORDS BAR CHART
-if (parseInt(getSubredditId())) {
-    fetch(requestBase('/api/ajax/words/' + getSubredditId() + '/'), postMethod)
+async function runBar() {
+    await fetch(requestBase('/api/ajax/words/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
             if (!body) {
                 return;
+            }
+            var ctx = document.getElementById('myChart');
+            if (ctx) {
+                ctx.getContext('2d');
             }
             var maxVal = 20;
             first20Label = body.data.bar30labels.slice(0, maxVal);
@@ -54,12 +64,13 @@ if (parseInt(getSubredditId())) {
                     },
                 },
             });
-            removeOverlay('word');
-        });
+        })
+        .finally((_) => removeOverlay('word'));
 }
+
 // PACKED BUBBLE CHART
-if (parseInt(getSubredditId())) {
-    fetch(requestBase('/api/ajax/bubble/' + getSubredditId() + '/'), postMethod)
+async function runBubble() {
+    await fetch(requestBase('/api/ajax/bubble/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
             if (!body || !body.data) {
@@ -123,13 +134,13 @@ if (parseInt(getSubredditId())) {
                 },
                 series: [negative, positive, netural],
             });
-            removeOverlay('bubble');
-        });
+        })
+        .finally((_) => removeOverlay('bubble'));
 }
 
 // WORDCLOUD
-if (parseInt(getSubredditId())) {
-    fetch(requestBase('/api/ajax/wordcloud/' + getSubredditId() + '/'), postMethod)
+async function runWordCloud() {
+    await fetch(requestBase('/api/ajax/wordcloud/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
             var wordCloudData = body.data.wordCloud;
@@ -165,11 +176,13 @@ if (parseInt(getSubredditId())) {
                     text: '',
                 },
             });
-            removeOverlay('cloud');
-        });
+        })
+        .finally((_) => removeOverlay('cloud'));
 }
 
 function removeOverlay(id) {
     var overlay = document.getElementById('overlay-' + id);
     overlay.style.display = 'none';
 }
+
+  
