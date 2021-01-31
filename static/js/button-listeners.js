@@ -7,9 +7,8 @@ for (var i = 0; i < buttons.length; i++) {
         fetch(requestBase('/api/ajax/stats/' + event.target.id + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then(data => {
-            console.log(data);
+            // console.log(data);
         })
 
     }, false);
-    
 }

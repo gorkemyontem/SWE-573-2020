@@ -1,8 +1,21 @@
 var ctx = document.getElementById('myChart');
 if (ctx) ctx.getContext('2d');
-// # SentenceAnalysis.objects.all().filter(subreddit_id=subreddit.subreddit_id)
-// # nouns = self.flattenNouns(SentenceAnalysis.objects.all().filter(subreddit_id=subreddit.subreddit_id).values_list('noun_phrases', flat=True))
-// # "http://'+lang+'.wikipedia.org/wiki/'+data.annotations[i].title+'" '+
+
+// TABULAR DATA
+if (parseInt(getSubredditId())) {
+    fetch(requestBase('/api/ajax/submissions/' + getSubredditId() + '/'), postMethod)
+        .then((res) => responseToJson(res))
+        .then((body) => {
+            if (!body) {
+                return;
+            }
+            data = body.data;
+            data.top10submissions.forEach(el => el.children = data[el.submission_id]);
+            render(mediaTemplate(data.top10submissions), '#submissions-content')
+        });
+}
+
+// WORDS BAR CHART
 if (parseInt(getSubredditId())) {
     fetch(requestBase('/api/ajax/words/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
@@ -44,7 +57,7 @@ if (parseInt(getSubredditId())) {
             removeOverlay();
         });
 }
-
+// PACKED BUBBLE CHART
 if (parseInt(getSubredditId())) {
     fetch(requestBase('/api/ajax/bubble/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
@@ -113,31 +126,7 @@ if (parseInt(getSubredditId())) {
         });
 }
 
-// path('api/ajax/submissions/<int:pk>/', DataSubmissions.as_view(), name = "data_submissions"),
-// path('api/ajax/comments/<int:pk>/<int:submission_id>', DataComments.as_view(), name = "data_comments"),
-if (parseInt(getSubredditId())) {
-    fetch(requestBase('/api/ajax/submissions/' + getSubredditId() + '/'), postMethod)
-        .then((res) => responseToJson(res))
-        .then((body) => {
-            if (!body) {
-                return;
-            }
-            console.log(body);
-        });
-}
-// if (parseInt(getSubredditId())) {
-//     fetch(requestBase('/api/ajax/submissions/' + getSubredditId() + '/'), postMethod)
-//         .then((res) => responseToJson(res))
-//         .then((body) => {
-//             if (!body) {
-//                 return;
-//             }
-//             console.log(body);
-//         });
-// }
-
 function removeOverlay() {
     var overlay = document.getElementById('overlay');
-    console.log(overlay);
     overlay.style.display = 'none';
 }

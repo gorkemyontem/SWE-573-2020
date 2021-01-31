@@ -88,10 +88,10 @@ class Queries():
     def top10submissions(subreddit_id = 1):
         with connection.cursor() as cursor:
             cursor.execute(''' 
-                            SELECT * FROM scraper_submission as ss
+                            SELECT ss.id, ss.submission_id, ss.url, ss.permalink, ss.title, ss.selftext, ss.name, ss.num_comments, ss.score, ss.subreddit_id, ss.upvote_ratio, ss.redditor_id, asa.avg_polarity, asa.avg_classification, asa.avg_subjectivity, asa.classification, asa.subjectivity, asa.polarity, asa.reddit_created_utc, asa.author_id, asa.words, asa.noun_phrases FROM scraper_submission as ss
                             INNER JOIN analyser_submissionanalysis as asa ON asa.submission_id = ss.submission_id 
                             WHERE ss.is_analized = True
-                            AND ss.created_utc > '2020-12-01' AND ss.created_utc < '2021-01-08'
+                            --AND ss.created_utc > '2020-12-01' AND ss.created_utc < '2021-01-08'
                             AND ss.subreddit_id = %s
                             ORDER BY ss.score DESC 
                             LIMIT 10
@@ -102,17 +102,55 @@ class Queries():
     @staticmethod
     def top10comments(submission_id = 1):
         with connection.cursor() as cursor:
-            cursor.execute(''' 
+            cursor.execute('''
                     SELECT * FROM scraper_comments as sc
                     INNER JOIN analyser_commentanalysis as aca ON aca.comment_id = sc.comment_id 
                     WHERE sc.is_analized = True
                     --AND sc.created_utc > '2020-12-01' AND sc.created_utc < '2021-01-08'
-                    AND sc.submission_id = 1
+                    AND sc.submission_id = %s
                     ORDER BY sc.score DESC 
                     LIMIT 10
                         ''', [submission_id])
             data = Queries.dictfetchall(cursor)
         return data
+
+
+    @staticmethod
+    def sentenceAnalysisOfSubmission(submission_id = 'fwtkgz'):
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                            SELECT 
+                                asa.id, asa.text, asa.polarity, asa.classification, asa.subjectivity, asa.words, asa.noun_phrases, 
+                                string_agg(CONCAT('[spot:', ata.spot, ', ', 'title:', ata.title,  ', ', 'p:', ROUND(ata.link_probability::numeric, 2),  ', ', 'rho:', ROUND(ata.rho::numeric,2),']'), ' | ') AS entities
+                            FROM analyser_sentenceanalysis AS asa 
+                            INNER JOIN analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
+                            INNER JOIN analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
+                            WHERE asa.submission_id = %s
+                            AND asa.text_type = 'title+body' 
+                            GROUP BY asa.id
+                            ORDER BY asa.order ASC
+                        ''', [submission_id])
+            data = Queries.dictfetchall(cursor)
+        return data
+
+    @staticmethod
+    def sentenceAnalysisOfComment(comment_id = 'fmqf18x'):
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                            SELECT 
+                                asa.id, asa.text, asa.polarity, asa.classification, asa.subjectivity, asa.words, asa.noun_phrases, 
+                                string_agg(CONCAT('[spot:', ata.spot, ', ', 'title:', ata.title,  ', ', 'p:', ROUND(ata.link_probability::numeric, 2),  ', ', 'rho:', ROUND(ata.rho::numeric,2),']'), ' | ') AS entities
+                            FROM analyser_sentenceanalysis AS asa 
+                            INNER JOIN analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
+                            INNER JOIN analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
+                            WHERE asa.comment_id = %s 
+                            AND asa.text_type = 'body' 
+                            GROUP BY asa.id
+                            ORDER BY asa.order ASC
+                        ''', [comment_id])
+            data = Queries.dictfetchall(cursor)
+        return data
+
 
     @staticmethod
     def stats():
