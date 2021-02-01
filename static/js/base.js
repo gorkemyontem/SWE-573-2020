@@ -13,7 +13,6 @@ if (parseInt(getSubredditId())) {
     rhoElement.value = rhoVal;
     probabilityValElement.innerText =(probabilityVal / 100).toString();
     rhoValElement.innerText = (rhoVal / 100).toString();
-    console.log(startDateVal, endDateVal, (probabilityVal/100).toString(), (rhoVal/100).toString());
     postMethod.body = JSON.stringify({startDate: startDateVal, endDate: endDateVal, probability: (probabilityVal/100).toString(), rho: (rhoVal/100).toString()})
     runTabular();
     runBar();
@@ -21,7 +20,6 @@ if (parseInt(getSubredditId())) {
     runBubble();
     runNetwork();
 }
-
 
 // TABULAR DATA
 async function runTabular() {
@@ -33,22 +31,29 @@ async function runTabular() {
             }
             data = body.data;
             data.top10submissions.forEach((el) => (el.children = data[el.submission_id]));
-            render(mediaTemplate(data.top10submissions), '#submissions-content');
+            if(data.top10submissions && data.top10submissions.length > 0){
+                render(mediaTemplate(data.top10submissions), '#submissions-content');
+            } else {
+                renderEmptyWarning('#submissions-content')
+            }
         })
         .finally((_) => removeOverlay('submission'));
 }
 
 // WORDS BAR CHART
 async function runBar() {
+    var ctx = document.getElementById('myChart');
+    if (ctx) {
+        ctx.getContext('2d');
+        ctx.globalCompositeOperation='destination-over';
+    }
+
     await fetch(requestBase('/api/ajax/words/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
-            if (!body) {
+            if (!body || !body.data || !body.data.bar30counts || !body.data.bar30labels) {
+                renderEmptyWarning('#mychart-error')
                 return;
-            }
-            var ctx = document.getElementById('myChart');
-            if (ctx) {
-                ctx.getContext('2d');
             }
             var maxVal = 20;
             first20Label = body.data.bar30labels.slice(0, maxVal);
@@ -85,12 +90,68 @@ async function runBar() {
         .finally((_) => removeOverlay('word'));
 }
 
+// WORDCLOUD
+async function runWordCloud() {
+    await fetch(requestBase('/api/ajax/wordcloud/' + getSubredditId() + '/'), postMethod)
+        .then((res) => responseToJson(res))
+        .then((body) => {
+            if (!body || !body.data ) {
+                renderEmptyWarning('#container-wordcloud-error')
+                renderEmptyWarning('#container-entitycloud-error')
+                return;
+            } else if (body.data.wordCloud.length  == 0) {
+                renderEmptyWarning('#container-wordcloud-error')
+                return;
+            } else if (body.data.entityCloud.length == 0) {
+                renderEmptyWarning('#container-entitycloud-error')
+                return;
+            }
+            console.log(body);
+
+            var wordCloudData = body.data.wordCloud;
+            var entityCloudData = body.data.entityCloud;
+            var wordsAndWeights = wordCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
+            var entitiesAndWeights = entityCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
+            var coefficientWord = 1000 / Math.sqrt(Math.max(...wordsAndWeights.map((e) => e.weight)));
+            var coefficientEntity = 1000 / Math.sqrt(Math.max(...entitiesAndWeights.map((e) => e.weight)));
+            wordsAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientWord));
+            entitiesAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientEntity));
+            Highcharts.chart('container-wordcloud', {
+                series: [
+                    {
+                        type: 'wordcloud',
+                        data: wordsAndWeights,
+                        name: 'Ratio',
+                    },
+                ],
+                title: {
+                    text: '',
+                },
+            });
+
+            Highcharts.chart('container-entitycloud', {
+                series: [
+                    {
+                        type: 'wordcloud',
+                        data: entitiesAndWeights,
+                        name: 'Ratio',
+                    },
+                ],
+                title: {
+                    text: '',
+                },
+            });
+        })
+        .finally((_) => removeOverlay('cloud'));
+}
+
 // PACKED BUBBLE CHART
 async function runBubble() {
     await fetch(requestBase('/api/ajax/bubble/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
-            if (!body || !body.data) {
+            if (!body || !body.data || !body.data.bubble500polarity || !body.data.bar30labels || !body.data.bubble500counts || !body.data.bubble500labels) {
+                renderEmptyWarning('#packed-bubbles')
                 return;
             }
 
@@ -155,57 +216,18 @@ async function runBubble() {
         .finally((_) => removeOverlay('bubble'));
 }
 
-// WORDCLOUD
-async function runWordCloud() {
-    await fetch(requestBase('/api/ajax/wordcloud/' + getSubredditId() + '/'), postMethod)
-        .then((res) => responseToJson(res))
-        .then((body) => {
-            var wordCloudData = body.data.wordCloud;
-            var entityCloudData = body.data.entityCloud;
-            var wordsAndWeights = wordCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
-            var entitiesAndWeights = entityCloudData.filter(({ name }) => !stopWords.includes(name.toLowerCase())).slice(0, 250);
-            var coefficientWord = 1000 / Math.sqrt(Math.max(...wordsAndWeights.map((e) => e.weight)));
-            var coefficientEntity = 1000 / Math.sqrt(Math.max(...entitiesAndWeights.map((e) => e.weight)));
-            wordsAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientWord));
-            entitiesAndWeights.forEach((e) => (e.weight = Math.sqrt(e.weight) * coefficientEntity));
-            Highcharts.chart('container-wordcloud', {
-                series: [
-                    {
-                        type: 'wordcloud',
-                        data: wordsAndWeights,
-                        name: 'Ratio',
-                    },
-                ],
-                title: {
-                    text: '',
-                },
-            });
-
-            Highcharts.chart('container-entitycloud', {
-                series: [
-                    {
-                        type: 'wordcloud',
-                        data: entitiesAndWeights,
-                        name: 'Ratio',
-                    },
-                ],
-                title: {
-                    text: '',
-                },
-            });
-        })
-        .finally((_) => removeOverlay('cloud'));
-}
-
 // NETWORK
 async function runNetwork() {
     await fetch(requestBase('/api/ajax/network/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
+            if (!body || !body.data || body.data.network.length == 0 || body.data.networkDataset.length == 0){
+                renderEmptyWarning('#container-network-chart-error')
+                return;
+            }
             var networkData = body.data.network;
             var dataset = body.data.networkDataset;
 
-            console.log(body);
             var groupedNetworkData = networkData.reduce(function (r, a) {
                 r[a.group_id] = r[a.group_id] || [];
                 r[a.group_id].push(a.id);

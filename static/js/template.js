@@ -19,6 +19,13 @@ var render = (template, selector) => {
     node.innerHTML = template;
 };
 
+var renderEmptyWarning = (selector) => {
+    var node = document.querySelector(selector);
+    if (!node) return;
+    node.innerHTML = 'Sorry, there is no data to show. You may play with the filters until you got it right!';
+};
+
+
 var mediaTemplate = (mediaArr) => {
     templates = mediaArr.map(
         (media) => `

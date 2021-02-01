@@ -5,8 +5,8 @@ from datetime import datetime
 import json
 class Params:
   def __init__(self, startDate, endDate, probability, rho):
-    self.startDate = datetime.strptime(startDate,'%d.%m.%Y').strftime("%d-%m-%Y") 
-    self.endDate = datetime.strptime(endDate,'%d.%m.%Y').strftime("%d-%m-%Y") 
+    self.startDate = datetime.strptime(startDate,'%d.%m.%Y').strftime("%m-%d-%Y") 
+    self.endDate = datetime.strptime(endDate,'%d.%m.%Y').strftime("%m-%d-%Y") 
     self.probability = probability
     self.rho = rho
 
