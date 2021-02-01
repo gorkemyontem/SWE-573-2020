@@ -4,6 +4,7 @@ import environ
 import requests
 import time
 import concurrent.futures
+import hashlib
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.http import HttpResponse
@@ -53,7 +54,7 @@ class StatsScheduleAjax(View):
 
 class DataWords(View):
     template_name = None
-    cache_key = 'cache.data-words-analysis-{0}-detail'
+    cache_key = 'cache.data-words-analysis-{0}-detail-{1}'
     cache_time = 1*60*60*3 # 3 saat
 
     @method_decorator(login_required)
@@ -63,17 +64,21 @@ class DataWords(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             subredditId = self.kwargs.get('pk')
-            self.cache_key = self.cache_key.format(subredditId)
+            self.cache_key = self.cache_key.format(subredditId, hashlib.md5(self.request.body).hexdigest())
             subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
             # TODO https variable, link probability variable, data variable, 
             if cache.get(self.cache_key) is None: 
-                bar30 = Queries.bar30(subreddit.subreddit_id)
-                data['bar30labels'] = bar30[0]
-                data['bar30counts'] = bar30[1]
-                cache.set(self.cache_key, data, self.cache_time)
+                bar30 = Queries.bar30(subreddit.subreddit_id, self.request.body)
+                if len(bar30) > 1:
+                    data['bar30labels'] = bar30[0]
+                    data['bar30counts'] = bar30[1]
+                    cache.set(self.cache_key, data, self.cache_time)
+                else:
+                    data['bar30labels'] = None
+                    data['bar30counts'] = None
             else: 
                 data = cache.get(self.cache_key)
 
@@ -81,7 +86,7 @@ class DataWords(View):
 
 class DataWordCloud(View):
     template_name = None
-    cache_key = 'cache.data-word-clod-analysis-{0}'
+    cache_key = 'cache.data-word-clod-analysis-{0}-{1}'
     cache_time = 1*60*60*3 # 3 saat
 
     @method_decorator(login_required)
@@ -91,15 +96,15 @@ class DataWordCloud(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             subredditId = self.kwargs.get('pk')
-            self.cache_key = self.cache_key.format(subredditId)
+            self.cache_key = self.cache_key.format(subredditId, hashlib.md5(self.request.body).hexdigest())
             subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
 
             if cache.get(self.cache_key) is None: 
-                wordCloud = Queries.wordCloud(subreddit.subreddit_id)
-                entityCloud = Queries.entityCloud(subreddit.subreddit_id)
+                wordCloud = Queries.wordCloud(subreddit.subreddit_id, self.request.body)
+                entityCloud = Queries.entityCloud(subreddit.subreddit_id, self.request.body)
                 data['wordCloud'] = wordCloud
                 data['entityCloud'] = entityCloud
                 cache.set(self.cache_key, data, self.cache_time)
@@ -110,7 +115,7 @@ class DataWordCloud(View):
 
 class DataBubble(View):
     template_name = None
-    cache_key = 'cache.data-bubble-analysis-{0}-detail'
+    cache_key = 'cache.data-bubble-analysis-{0}-detail-{1}'
     cache_time = 1*60*60*3 
 
     @method_decorator(login_required)
@@ -120,18 +125,23 @@ class DataBubble(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             subredditId = self.kwargs.get('pk')
-            self.cache_key = self.cache_key.format(subredditId)
+            self.cache_key = self.cache_key.format(subredditId, hashlib.md5(self.request.body).hexdigest())
             subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
             
             if cache.get(self.cache_key) is None: 
-
-                buble100 = Queries.buble100(subreddit.subreddit_id)
-                data['bubble500labels'] = buble100[0]
-                data['bubble500counts'] = buble100[1]
-                data['bubble500polarity'] = buble100[2]
+                buble100 = Queries.buble100(subreddit.subreddit_id, self.request.body)
+                if len(buble100) > 1:
+                    data['bubble500labels'] = buble100[0]
+                    data['bubble500counts'] = buble100[1]
+                    data['bubble500polarity'] = buble100[2]
+                    cache.set(self.cache_key, data, self.cache_time)
+                else:
+                    data['bubble500labels'] = None
+                    data['bubble500counts'] = None
+                    data['bubble500polarity'] = None
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
                 data = cache.get(self.cache_key)
@@ -141,7 +151,7 @@ class DataBubble(View):
 
 class DataSubmissions(View):
     template_name = None
-    cache_key = 'cache.data-submission-analysis-{0}-detail'
+    cache_key = 'cache.data-submission-analysis-{0}-detail-{1}'
     cache_time = 1*60*60*3 
 
     @method_decorator(login_required)
@@ -151,7 +161,7 @@ class DataSubmissions(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             subredditId = self.kwargs.get('pk')
-            self.cache_key = self.cache_key.format(subredditId)
+            self.cache_key = self.cache_key.format(subredditId, hashlib.md5(self.request.body).hexdigest())
             subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
@@ -159,10 +169,10 @@ class DataSubmissions(View):
             
             if cache.get(self.cache_key) is None: 
                 # submissions = Submission.objects.filter(subreddit_id = subreddit.id, is_analized = True, created_utc__range=["2020-12-01", "2021-01-08"]).order_by('-score').values('id', 'submission_id', 'name', 'title', 'url', 'selftext', 'num_comments', 'score', 'created_utc', 'redditor_id')[:100]
-                top10submissions = Queries.top10submissions(subredditId)
+                top10submissions = Queries.top10submissions(subredditId, self.request.body)
                 data['top10submissions'] = top10submissions
                 for subs in top10submissions:
-                    data[subs['submission_id']] = Queries.top10comments(subs['id'])
+                    data[subs['submission_id']] = Queries.top10comments(subs['id'], self.request.body)
 
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
@@ -173,7 +183,7 @@ class DataSubmissions(View):
 
 class DataSentencesSubmissions(View):
     template_name = None
-    cache_key = 'cache.data-submission-sentences-analysis-{0}'
+    cache_key = 'cache.data-submission-sentences-analysis-{0}-{1}'
     cache_time = 1*60*60*3 
 
     @method_decorator(login_required)
@@ -183,10 +193,10 @@ class DataSentencesSubmissions(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             submissionId = self.kwargs.get('submission_id')
-            self.cache_key = self.cache_key.format(submissionId)
+            self.cache_key = self.cache_key.format(submissionId, hashlib.md5(self.request.body).hexdigest())
             data = {}
             if cache.get(self.cache_key) is None: 
-                sentenceAnalysisOfSubmission = Queries.sentenceAnalysisOfSubmission(submissionId)
+                sentenceAnalysisOfSubmission = Queries.sentenceAnalysisOfSubmission(submissionId, self.request.body)
                 data['sentenceAnalysis'] = sentenceAnalysisOfSubmission
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
@@ -196,7 +206,7 @@ class DataSentencesSubmissions(View):
 
 class DataSentencesComments(View):
     template_name = None
-    cache_key = 'cache.data-comments-sentences-analysis-{0}'
+    cache_key = 'cache.data-comments-sentences-analysis-{0}-{1}'
     cache_time = 1*60*60*3 
 
     @method_decorator(login_required)
@@ -206,10 +216,10 @@ class DataSentencesComments(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             commentId = self.kwargs.get('comment_id')
-            self.cache_key = self.cache_key.format(commentId)
+            self.cache_key = self.cache_key.format(commentId, hashlib.md5(self.request.body).hexdigest())
             data = {}
             if cache.get(self.cache_key) is None: 
-                sentenceAnalysisOfComment = Queries.sentenceAnalysisOfComment(commentId)
+                sentenceAnalysisOfComment = Queries.sentenceAnalysisOfComment(commentId, self.request.body)
                 data['sentenceAnalysis'] = sentenceAnalysisOfComment
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
@@ -220,7 +230,7 @@ class DataSentencesComments(View):
 
 class DataNetwork(View):
     template_name = None
-    cache_key = 'cache.data-network-analysis-{0}'
+    cache_key = 'cache.data-network-analysis-{0}-{1}'
     cache_time = 1*60*60*3 
 
     @method_decorator(login_required)
@@ -230,18 +240,17 @@ class DataNetwork(View):
     def post(self, *args, **kwargs):
         if self.request.method == "POST" and self.request.is_ajax():
             subredditId = self.kwargs.get('pk')
-            self.cache_key = self.cache_key.format(subredditId)
+            self.cache_key = self.cache_key.format(subredditId, hashlib.md5(self.request.body).hexdigest())
             subreddit = Subreddit.objects.get(pk=subredditId)
             data = {}
             if subreddit is None:
                 return JsonResponse({"success": False}, status=400)
             
             if cache.get(self.cache_key) is None: 
-                network = Queries.network(subreddit.subreddit_id)
-                networkDataset = Queries.networkDataset(subreddit.subreddit_id)
+                network = Queries.network(subreddit.subreddit_id, self.request.body)
+                networkDataset = Queries.networkDataset(subreddit.subreddit_id, self.request.body)
                 data['network'] = network
                 data['networkDataset'] = networkDataset
-                
                 cache.set(self.cache_key, data, self.cache_time)
             else: 
                 data = cache.get(self.cache_key)

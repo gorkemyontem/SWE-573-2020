@@ -1,3 +1,18 @@
+var startDateElement = document.getElementById('startDate');
+var endDateElement = document.getElementById('endDate');
+var probabilityElement = document.getElementById('probability');
+var rhoElement = document.getElementById('rho');
+var probabilityValElement = document.getElementById('probability-val');
+var rhoValElement = document.getElementById('rho-val');
+
+probabilityElement.addEventListener('input', (event) => {
+    probabilityValElement.innerText = new Number(event.target.value / 100);
+});
+rhoElement.addEventListener('input', (event) => {
+    rhoValElement.innerText = new Number(event.target.value / 100);
+});
+
+
 var render = (template, selector) => {
     var node = document.querySelector(selector);
     if (!node) return;
@@ -202,3 +217,69 @@ var fetchData = (type, id) =>
                 return body.data.sentenceAnalysis;
             }
         });
+        
+$('#startDate').datepicker({
+    uiLibrary: 'bootstrap4',
+    format: 'dd.mm.yyyy', 
+    iconsLibrary: 'fontawesome',
+    maxDate: function () {
+        return $('#endDate').val();
+    }
+});
+$('#endDate').datepicker({
+    uiLibrary: 'bootstrap4',
+    format: 'dd.mm.yyyy', 
+    iconsLibrary: 'fontawesome',
+    minDate: function () {
+        return $('#startDate').val();
+    }
+});
+
+
+function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
+    console.log('Query variable %s not found', variable);
+}
+
+function reloadWithQueryStringVars (queryStringVars) {
+    var existingQueryVars = location.search ? location.search.substring(1).split("&") : [],
+        currentUrl = location.search ? location.href.replace(location.search,"") : location.href,
+        newQueryVars = {},
+        newUrl = currentUrl + "?";
+
+    if(existingQueryVars.length > 0) {
+        for (var i = 0; i < existingQueryVars.length; i++) {
+            var pair = existingQueryVars[i].split("=");
+            newQueryVars[pair[0]] = pair[1];
+        }
+    }
+
+    if(queryStringVars) {
+        for (var queryStringVar in queryStringVars) {
+            newQueryVars[queryStringVar] = queryStringVars[queryStringVar];
+        }
+    }
+
+    if(newQueryVars) { 
+        for (var newQueryVar in newQueryVars) {
+            newUrl += newQueryVar + "=" + newQueryVars[newQueryVar] + "&";
+        }
+        newUrl = newUrl.substring(0, newUrl.length-1);
+        window.location.href = newUrl;
+    } else {
+        window.location.href = location.href;
+    }
+}
+
+function onFormSubmit(e) {
+    e.preventDefault();
+    reloadWithQueryStringVars({ startDate: startDateElement.value, endDate: endDateElement.value, probability: probabilityElement.value, rho: rhoElement.value });
+}
+

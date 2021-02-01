@@ -1,11 +1,25 @@
 
 from django.db import connection
 from collections import namedtuple
+from datetime import datetime
+import json
+class Params:
+  def __init__(self, startDate, endDate, probability, rho):
+    self.startDate = datetime.strptime(startDate,'%d.%m.%Y').strftime("%d-%m-%Y") 
+    self.endDate = datetime.strptime(endDate,'%d.%m.%Y').strftime("%d-%m-%Y") 
+    self.probability = probability
+    self.rho = rho
 
 class Queries():
+    @staticmethod
+    def parseParameters(args):
+        q = json.loads(args)
+        p = Params(q["startDate"], q["endDate"], q["probability"], q["rho"])
+        return p
 
     @staticmethod
-    def bar30(subreddit_id):
+    def bar30(subreddit_id, args):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
                             SELECT 
@@ -17,11 +31,11 @@ class Queries():
                                 INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                             WHERE 
                                 is_analized = true 
-                                AND ata.link_probability > 0.15 
-                                AND ata.rho > 0.15
+                                AND ata.link_probability > {probability}
+                                AND ata.rho > {rho}
                                 AND ata.is_active = True
-                                --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
-                                AND subreddit_id = %s 
+                                AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
+                                AND subreddit_id = '{subredditId}'
                             GROUP BY 
                                 ata.title 
                             HAVING 
@@ -30,12 +44,13 @@ class Queries():
                                 count(*) DESC 
                             LIMIT 
                                 30;
-                            ''', [subreddit_id])
+                            '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.unzipTuple(cursor.fetchall())
         return data
 
     @staticmethod
-    def buble100(subreddit_id):
+    def buble100(subreddit_id, args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
                             SELECT 
@@ -55,14 +70,14 @@ class Queries():
                                     INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                                     WHERE 
                                         is_analized = true 
-                                        AND ata.link_probability > 0.15 
-                                        AND ata.rho > 0.15
+                                        AND ata.link_probability > {probability} 
+                                        AND ata.rho > {rho}
                                         AND ata.is_active = True
-                                        AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
-                                        AND subreddit_id = %s 
+                                        AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
+                                        AND subreddit_id = '{subredditId}'
                                     GROUP BY title
                                 ) AS ag_count ON ag_count.title = ata.title 
-                                WHERE asa.subreddit_id = %s 
+                                WHERE asa.subreddit_id = '{subredditId}'
                                 GROUP BY 
                                 ag_count.title, 
                                 ag_count.count 
@@ -72,43 +87,49 @@ class Queries():
                                 ag_count.count DESC 
                                 LIMIT 
                                 100;
-                        ''', [subreddit_id, subreddit_id])
+                    '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
+
             data = Queries.unzipTuple(cursor.fetchall())
         return data
    
     @staticmethod
-    def top10submissions(subreddit_id = 1):
+    def top10submissions(subreddit_id = 1, args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
-                            SELECT ss.id, ss.submission_id, ss.url, ss.permalink, ss.title, ss.selftext, ss.name, ss.num_comments, ss.score, ss.subreddit_id, ss.upvote_ratio, ss.redditor_id, asa.avg_polarity, asa.avg_classification, asa.avg_subjectivity, asa.classification, asa.subjectivity, asa.polarity, asa.reddit_created_utc, asa.author_id, asa.words, asa.noun_phrases FROM scraper_submission as ss
+                            SELECT ss.id, ss.submission_id, ss.url, ss.permalink, ss.title, ss.selftext, ss.name, ss.num_comments, ss.score, ss.subreddit_id, ss.upvote_ratio, ss.redditor_id, asa.avg_polarity, asa.avg_classification, asa.avg_subjectivity, asa.classification, asa.subjectivity, asa.polarity, asa.reddit_created_utc, asa.author_id, asa.words, asa.noun_phrases 
+                            FROM scraper_submission as ss
                             INNER JOIN analyser_submissionanalysis as asa ON asa.submission_id = ss.submission_id 
                             WHERE ss.is_analized = True
-                            --AND ss.created_utc > '2020-12-01' AND ss.created_utc < '2021-01-08'
-                            AND ss.subreddit_id = %s
+                            AND ss.created_utc > '{startDate}' AND ss.created_utc < '{endDate}'
+                            AND ss.subreddit_id = '{subredditId}'
                             ORDER BY ss.score DESC 
                             LIMIT 10
-                        ''', [subreddit_id])
+                    '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate))
+
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def top10comments(submission_id = 1):
+    def top10comments(submission_id = 1, args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute('''
                     SELECT * FROM scraper_comments as sc
                     INNER JOIN analyser_commentanalysis as aca ON aca.comment_id = sc.comment_id 
                     WHERE sc.is_analized = True
-                    --AND sc.created_utc > '2020-12-01' AND sc.created_utc < '2021-01-08'
-                    AND sc.submission_id = %s
+                    AND sc.created_utc > '{startDate}' AND sc.created_utc < '{endDate}'
+                    AND sc.submission_id = '{submissionId}'
                     ORDER BY sc.score DESC 
                     LIMIT 10
-                        ''', [submission_id])
+            '''.format(submissionId=submission_id, startDate=params.startDate, endDate=params.endDate))
+
             data = Queries.dictfetchall(cursor)
         return data
 
-
     @staticmethod
-    def sentenceAnalysisOfSubmission(submission_id = 'fwtkgz'):
+    def sentenceAnalysisOfSubmission(submission_id = '', args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute('''
                             SELECT 
@@ -117,19 +138,20 @@ class Queries():
                             FROM analyser_sentenceanalysis AS asa 
                             INNER JOIN analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                             INNER JOIN analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
-                            WHERE asa.submission_id = %s
-                            AND ata.link_probability > 0.15 
-                            AND ata.rho > 0.15
+                            WHERE asa.submission_id = '{submissionId}'
+                            AND ata.link_probability > {probability} 
+                            AND ata.rho > {rho}
                             AND ata.is_active = True
                             AND asa.text_type = 'title+body' 
                             GROUP BY asa.id
                             ORDER BY asa.order ASC
-                        ''', [submission_id])
+                    '''.format(submissionId=submission_id, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def sentenceAnalysisOfComment(comment_id = 'fmqf18x'):
+    def sentenceAnalysisOfComment(comment_id = '', args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute('''
                             SELECT 
@@ -138,33 +160,35 @@ class Queries():
                             FROM analyser_sentenceanalysis AS asa 
                             INNER JOIN analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                             INNER JOIN analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
-                            WHERE asa.comment_id = %s 
-                            AND ata.link_probability > 0.15 
-                            AND ata.rho > 0.15
+                            WHERE asa.comment_id = {commentId} 
+                            AND ata.link_probability > {probability} 
+                            AND ata.rho > {rho}
                             AND ata.is_active = True
                             AND asa.text_type = 'body' 
                             GROUP BY asa.id
                             ORDER BY asa.order ASC
-                        ''', [comment_id])
+                    '''.format(commentId=comment_id, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def wordCloud(subreddit_id = '2f4kx6'):
+    def wordCloud(subreddit_id = '', args = ''):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
                             SELECT word as name, Count(*) as weight 
-                            FROM (SELECT unnest(words) as word FROM analyser_sentenceanalysis WHERE subreddit_id = %s GROUP BY words) AS wordtable
+                            FROM (SELECT unnest(words) as word FROM analyser_sentenceanalysis WHERE subreddit_id = '{subredditId}' GROUP BY words) AS wordtable
                             GROUP BY word
                             HAVING count(*) > 10
                             ORDER BY Count(*) DESC
                             LIMIT 2000
-                        ''', [subreddit_id])
+                    '''.format(subredditId=subreddit_id))
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def entityCloud(subreddit_id):
+    def entityCloud(subreddit_id, args):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
                             SELECT 
@@ -176,11 +200,11 @@ class Queries():
                                 INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                             WHERE 
                                 is_analized = true 
-                                AND ata.link_probability > 0.15 
-                                AND ata.rho > 0.15
+                                AND ata.link_probability > {probability} 
+                                AND ata.rho > {rho}
                                 AND ata.is_active = True
-                                --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
-                                AND subreddit_id =  %s 
+                                AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
+                                AND subreddit_id =  '{subredditId}'
                             GROUP BY 
                                 ata.title 
                             HAVING 
@@ -189,13 +213,14 @@ class Queries():
                                 count(*) DESC 
                             LIMIT 
                                 500;
-                            ''', [subreddit_id])
+                    '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def network(subreddit_id):
-        with connection.cursor() as cursor:
+    def network(subreddit_id, args):
+        params = Queries.parseParameters(args)
+        with connection.cursor() as cursor: 
             cursor.execute(''' 
                         SELECT atsa.sentenceanalysis_id AS group_id, cte.id AS id FROM analyser_tagmesentenceanalysis AS atsa
                         INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
@@ -204,38 +229,39 @@ class Queries():
                         SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
                             INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
                             INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
-                            WHERE asa.subreddit_id =  %s
-                            AND ata.link_probability > 0.15 
-                            AND ata.rho > 0.15
+                            WHERE asa.subreddit_id = '{subredditId}'
+                            AND ata.link_probability > {probability} 
+                            AND ata.rho > {rho}
                             AND ata.is_active = True
-                            --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
+                            AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
                             GROUP BY ata.title
                             HAVING Count(1) > 40
                         ) AS cte ON  cte.label = ata.title
-                        WHERE asa.subreddit_id = %s
-                        AND ata.link_probability > 0.15 
-                        AND ata.rho > 0.15
+                        WHERE asa.subreddit_id = '{subredditId}'
+                        AND ata.link_probability > {probability} 
+                        AND ata.rho > {rho}
                         AND ata.is_active = True
                         ORDER BY atsa.sentenceanalysis_id ASC
-                        ''', [subreddit_id, subreddit_id])
+                    '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
 
     @staticmethod
-    def networkDataset(subreddit_id):
+    def networkDataset(subreddit_id, args):
+        params = Queries.parseParameters(args)
         with connection.cursor() as cursor:
             cursor.execute(''' 
                         SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
                         INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
                         INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
-                        WHERE asa.subreddit_id = '2f4kx6'
-                        AND ata.link_probability > 0.15 
-                        AND ata.rho > 0.15
+                        WHERE asa.subreddit_id = '{subredditId}'
+                        AND ata.link_probability > {probability} 
+                        AND ata.rho > {rho}
                         AND ata.is_active = True
-                        --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
+                        AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
                         GROUP BY ata.title
                         HAVING Count(1) > 40
-                        ''', [subreddit_id])
+                    '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
 

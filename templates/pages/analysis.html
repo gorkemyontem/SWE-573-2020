@@ -7,35 +7,16 @@
 {% csrf_token %}
 
 
+
 <div class="row">
 
-    <div class="col-md-12 col-lg-2 mg-t-20 mg-lg-t-0">
-        <div class="card">
-            <img src="{% static 'images/reddit-logo.jpg' %}" class="card-img-top" alt="{{ object.name }}">
-            <div class="card-body">
-                <h5 class="card-title">{{ object.display_name }}</h5>
-                <p class="card-text">{{ object.title }}</p>
-            </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item"><strong>Id:</strong> {{ object.subreddit_id }}</li>
-                <li class="list-group-item"><strong>Description:</strong> {{ object.description }}</li>
-                <li class="list-group-item"><strong>Subscribers:</strong> {{ object.subscribers }}</li>
-                <li class="list-group-item"><strong>Submissions:</strong> {{ additional_context.submissionCount }}</li>
-                <li class="list-group-item"><strong>Comments:</strong> {{ additional_context.commentCount }}</li>
-                <li class="list-group-item"><strong>Created:</strong> {{ object.created_utc }}</li>
-            </ul>
-            <div class="card-body">
-                <strong>Go to:</strong> <a class="card-link" href="https://www.reddit.com{{ subreddit.url }}"
-                    target="_blank">
-                    {{ subreddit.url }}
-                </a>
-            </div>
-        </div>
-    </div>
-
-
+    {% block section1 %}
+        {% include 'components/sidebar.html' %}
+    {% endblock %}
     <div class="col-md-12 col-lg-10 mg-t-20 mg-lg-t-0">
-
+        {% block section2 %}
+            {% include 'components/filter.html' %}
+        {% endblock %}
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="tabular-tab" data-toggle="tab" href="#tabular" role="tab">Tabular</a>

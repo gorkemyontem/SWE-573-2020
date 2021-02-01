@@ -1,13 +1,26 @@
-
-
 if (parseInt(getSubredditId())) {
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = today.getFullYear();
+    var startDateVal = getQueryVariable('startDate') || "01.01.2020";
+    var endDateVal = getQueryVariable('endDate') || dd + '.' + mm + '.' + yyyy;
+    var probabilityVal = getQueryVariable('probability') || "15";
+    var rhoVal = getQueryVariable('rho') || "15";
+    startDateElement.value = startDateVal;
+    endDateElement.value = endDateVal;
+    probabilityElement.value = probabilityVal;
+    rhoElement.value = rhoVal;
+    probabilityValElement.innerText =(probabilityVal / 100).toString();
+    rhoValElement.innerText = (rhoVal / 100).toString();
+    console.log(startDateVal, endDateVal, (probabilityVal/100).toString(), (rhoVal/100).toString());
+    postMethod.body = JSON.stringify({startDate: startDateVal, endDate: endDateVal, probability: (probabilityVal/100).toString(), rho: (rhoVal/100).toString()})
     runTabular();
     runBar();
     runWordCloud();
     runBubble();
     runNetwork();
 }
-
 
 
 // TABULAR DATA
@@ -248,7 +261,6 @@ async function runNetwork() {
                 },
                 physics: {
                     barnesHut: {
-                        theta: 0.1,
                         gravitationalConstant: -29100,
                         centralGravity: 0.85,
                         springLength: 55,

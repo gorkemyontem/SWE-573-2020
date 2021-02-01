@@ -1,0 +1,23 @@
+<section>
+    <form onsubmit="onFormSubmit(event)">
+        <div class="form-row align-items-center">
+            <div class="col">
+                Start Date: <input id="startDate" width="250" />
+            </div>
+
+            <div class="col">
+                End Date: <input id="endDate" width="250" />
+            </div>
+            <div class="col">
+                Probability (<span id="probability-val"></span>): <input type="range" class="form-control-range" id="probability"  min="0" max="100" value="15" width="250">
+            </div>
+            <div class="col">
+                Rho (<span id="rho-val"></span>): <input type="range" class="form-control-range" id="rho"  min="0" max="100" value="15" width="250">
+            </div>
+            <div class="col">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+</section>
+<br>
