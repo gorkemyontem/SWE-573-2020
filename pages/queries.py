@@ -210,13 +210,13 @@ class Queries():
                             AND ata.is_active = True
                             --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
                             GROUP BY ata.title
+                            HAVING Count(1) > 40
                         ) AS cte ON  cte.label = ata.title
                         WHERE asa.subreddit_id = %s
                         AND ata.link_probability > 0.15 
                         AND ata.rho > 0.15
                         AND ata.is_active = True
-                        ORDER BY atsa.sentenceanalysis_id 
-                        LIMIT 2000
+                        ORDER BY atsa.sentenceanalysis_id ASC
                         ''', [subreddit_id, subreddit_id])
             data = Queries.dictfetchall(cursor)
         return data
@@ -234,6 +234,7 @@ class Queries():
                         AND ata.is_active = True
                         --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
                         GROUP BY ata.title
+                        HAVING Count(1) > 40
                         ''', [subreddit_id])
             data = Queries.dictfetchall(cursor)
         return data

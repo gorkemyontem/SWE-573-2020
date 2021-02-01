@@ -1,3 +1,5 @@
+
+
 if (parseInt(getSubredditId())) {
     runTabular();
     runBar();
@@ -5,6 +7,8 @@ if (parseInt(getSubredditId())) {
     runBubble();
     runNetwork();
 }
+
+
 
 // TABULAR DATA
 async function runTabular() {
@@ -182,12 +186,13 @@ async function runWordCloud() {
 
 // NETWORK
 async function runNetwork() {
-    
     await fetch(requestBase('/api/ajax/network/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
             var networkData = body.data.network;
             var dataset = body.data.networkDataset;
+
+            console.log(body);
             var groupedNetworkData = networkData.reduce(function (r, a) {
                 r[a.group_id] = r[a.group_id] || [];
                 r[a.group_id].push(a.id);
@@ -199,22 +204,32 @@ async function runNetwork() {
             const linkedData = groupedNetworkDataValues.map((ids) => linkify(ids));
             const filteredLinkedData = linkedData.filter((el) => el.length > 0);
             var edgesData = filteredLinkedData.flat();
-     
+
             for (let i = 0; i < edgesData.length; i++) {
                 const from = edgesData[i].from;
                 const to = edgesData[i].to;
-                var a = edgesData.filter(q => q.from == from && q.to == to);
+                var a = edgesData.filter((q) => q.from == from && q.to == to);
                 edgesData[i].value = a.length;
                 edgesData[i].title = `${a.length} occurences`;
             }
 
-            edgesData = edgesData.filter((v,i,a)=>a.findIndex(t=>(t.from === v.from && t.to===v.to))===i)
-            edgesData = edgesData.filter(el => el.value > 1)
+            edgesData = edgesData.filter((v, i, a) => a.findIndex((t) => t.from === v.from && t.to === v.to) === i);
+            edgesData = edgesData.filter((el) => el.from != el.to); // Self targetting
+            edgesData = edgesData.filter((el) => el.value > 2); // Min occurences
+
+            arr = [];
+            edgesData.forEach((el) => {
+                if (arr.findIndex((x) => x.from == el.to && x.to == el.from) == -1) {
+                    arr.push(el);
+                }
+            });
+
+            edgesData = arr;
             var onlyIds = edgesData.map((el) => el.from);
             onlyIds.push(...edgesData.map((el) => el.to));
             let uniqueIds = [...new Set(onlyIds)];
             dataset = dataset.filter((el) => uniqueIds.includes(el.id));
-            
+
             // create an array with nodes
             var nodes = new vis.DataSet(dataset);
             // create an array with edges
@@ -229,16 +244,43 @@ async function runNetwork() {
 
             var options = {
                 nodes: {
-                    shape: "dot",
-                  },
+                    shape: 'dot',
+                },
+                physics: {
+                    barnesHut: {
+                        theta: 0.1,
+                        gravitationalConstant: -29100,
+                        centralGravity: 0.85,
+                        springLength: 55,
+                        springConstant: 0.235,
+                        damping: 0.48,
+                        avoidOverlap: 1,
+                    },
+                    maxVelocity: 47,
+                    minVelocity: 0.75,
+                    solver: 'barnesHut',
+                },
+                edges: {
+                    font: {
+                        align: 'top',
+                    },
+                    smooth: {
+                        type: 'dynamic',
+                        forceDirection: 'horizontal',
+                        roundness: 0.0,
+                    },
+                },
                 layout: {
                     improvedLayout: false,
                 },
-                edges: {
-                    smooth: false,
-                }
             };
-            new vis.Network(container, data, options);
+            network = new vis.Network(container, data, options);
+            network.on('stabilizationIterationsDone', function (params) {
+                network.stopSimulation();
+                network.setOptions({ physics: false });
+            });
+
+            network.stabilize(500);
         })
         .finally((_) => removeOverlay('network'));
 }
