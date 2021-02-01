@@ -44,16 +44,15 @@
                 <a class="nav-link" id="word-tab" data-toggle="tab" href="#word" role="tab">Word</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab">Bubble</a>
+                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#bubble" role="tab">Bubble</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab">Network</a>
+                <a class="nav-link" id="contact-tab" data-toggle="tab" href="#network" role="tab">Network</a>
             </li>
         </ul>
         <br>
         <br>
-        <div class="tab-content" id="myTabContent">
-
+        <div class="tab-content" id="saTabContent">
             <div class="tab-pane fade show active" id="tabular" role="tabpanel">
                 <div class="sa-overlay-wrapper">
                     <div class="sa-overlay" id="overlay-submission">
@@ -90,7 +89,7 @@
                     </figure>
                 </div>
             </div>
-            <div class="tab-pane fade" id="profile" role="tabpanel">
+            <div class="tab-pane fade" id="bubble" role="tabpanel">
                 <div class="sa-overlay-wrapper">
                     <div class="sa-overlay" id="overlay-bubble">
                         <div class="spinner-border"></div>
@@ -101,7 +100,16 @@
                     <div id="packed-bubbles"></div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="contact" role="tabpanel">3asdasd</div>
+            <div class="tab-pane fade" id="network" role="tabpanel">
+                <div class="sa-overlay-wrapper">
+                    <div class="sa-overlay" id="overlay-network">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <div class="az-content-label mg-b-5">Network Graph</div>
+                    <p class="mg-b-20">Links between <strong>Entities</strong></p>
+                    <div id="container-network-chart"></div>
+                </div>
+            </div>
         </div>
 
     </div>

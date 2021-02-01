@@ -203,3 +203,8 @@ a.nav-link:hover {
 .highcharts-data-table tr:hover {
     background: #f1f7ff;
 }
+
+#container-network-chart {
+    height: 600px;
+    border: 1px solid lightgray;
+  }

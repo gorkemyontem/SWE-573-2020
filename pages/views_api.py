@@ -216,3 +216,34 @@ class DataSentencesComments(View):
                 data = cache.get(self.cache_key)
 
         return JsonResponse({"success":True, "data": data}, status=200)
+
+
+class DataNetwork(View):
+    template_name = None
+    cache_key = 'cache.data-network-analysis-{0}'
+    cache_time = 1*60*60*3 
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if self.request.method == "POST" and self.request.is_ajax():
+            subredditId = self.kwargs.get('pk')
+            self.cache_key = self.cache_key.format(subredditId)
+            subreddit = Subreddit.objects.get(pk=subredditId)
+            data = {}
+            if subreddit is None:
+                return JsonResponse({"success": False}, status=400)
+            
+            if cache.get(self.cache_key) is None: 
+                network = Queries.network(subreddit.subreddit_id)
+                networkDataset = Queries.networkDataset(subreddit.subreddit_id)
+                data['network'] = network
+                data['networkDataset'] = networkDataset
+                
+                cache.set(self.cache_key, data, self.cache_time)
+            else: 
+                data = cache.get(self.cache_key)
+
+        return JsonResponse({"success":True, "data": data}, status=200)

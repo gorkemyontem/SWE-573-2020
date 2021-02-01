@@ -12,15 +12,15 @@ class Queries():
                                 ata.title, 
                                 Count(*) 
                             FROM 
-                                public.analyser_sentenceanalysis AS sa 
-                                INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = sa.id 
+                                public.analyser_sentenceanalysis AS asa 
+                                INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                                 INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                             WHERE 
                                 is_analized = true 
                                 AND ata.link_probability > 0.15 
                                 AND ata.rho > 0.15
                                 AND ata.is_active = True
-                                --AND sa.reddit_created_utc > '2020-12-01' AND sa.reddit_created_utc < '2021-01-08'
+                                --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
                                 AND subreddit_id = %s 
                             GROUP BY 
                                 ata.title 
@@ -42,27 +42,27 @@ class Queries():
                                 ag_count.title, 
                                 ag_count.count, 
                                 CASE WHEN AVG(polarity) > 0 THEN 'Positive' WHEN AVG(polarity) < 0 THEN 'Negative' ELSE 'Neutral' END 
-                                FROM public.analyser_sentenceanalysis sa 
-                                INNER JOIN public.analyser_tagmesentenceanalysis atsa ON atsa.sentenceanalysis_id = sa.id 
+                                FROM public.analyser_sentenceanalysis asa 
+                                INNER JOIN public.analyser_tagmesentenceanalysis atsa ON atsa.sentenceanalysis_id = asa.id 
                                 INNER JOIN public.analyser_tagmeanalysis ata ON ata.id = atsa.tagmeanalysis_id 
                                 INNER JOIN (
                                     SELECT 
                                         ata.title, 
                                         Count(*) 
                                     FROM 
-                                    public.analyser_sentenceanalysis AS sa 
-                                    INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = sa.id 
+                                    public.analyser_sentenceanalysis AS asa 
+                                    INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                                     INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                                     WHERE 
                                         is_analized = true 
                                         AND ata.link_probability > 0.15 
                                         AND ata.rho > 0.15
                                         AND ata.is_active = True
-                                        AND sa.reddit_created_utc > '2020-12-01' AND sa.reddit_created_utc < '2021-01-08'
+                                        AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
                                         AND subreddit_id = %s 
                                     GROUP BY title
                                 ) AS ag_count ON ag_count.title = ata.title 
-                                WHERE sa.subreddit_id = %s 
+                                WHERE asa.subreddit_id = %s 
                                 GROUP BY 
                                 ag_count.title, 
                                 ag_count.count 
@@ -171,15 +171,15 @@ class Queries():
                                 ata.title as name,
                                 Count(*) as weight 
                             FROM 
-                                public.analyser_sentenceanalysis AS sa 
-                                INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = sa.id 
+                                public.analyser_sentenceanalysis AS asa 
+                                INNER JOIN public.analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                                 INNER JOIN public.analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
                             WHERE 
                                 is_analized = true 
                                 AND ata.link_probability > 0.15 
                                 AND ata.rho > 0.15
                                 AND ata.is_active = True
-                                --AND sa.reddit_created_utc > '2020-12-01' AND sa.reddit_created_utc < '2021-01-08'
+                                --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
                                 AND subreddit_id =  %s 
                             GROUP BY 
                                 ata.title 
@@ -193,6 +193,50 @@ class Queries():
             data = Queries.dictfetchall(cursor)
         return data
 
+    @staticmethod
+    def network(subreddit_id):
+        with connection.cursor() as cursor:
+            cursor.execute(''' 
+                        SELECT atsa.sentenceanalysis_id AS group_id, cte.id AS id FROM analyser_tagmesentenceanalysis AS atsa
+                        INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                        INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                        INNER JOIN (
+                        SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
+                            INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                            INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                            WHERE asa.subreddit_id =  %s
+                            AND ata.link_probability > 0.15 
+                            AND ata.rho > 0.15
+                            AND ata.is_active = True
+                            --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
+                            GROUP BY ata.title
+                        ) AS cte ON  cte.label = ata.title
+                        WHERE asa.subreddit_id = %s
+                        AND ata.link_probability > 0.15 
+                        AND ata.rho > 0.15
+                        AND ata.is_active = True
+                        ORDER BY atsa.sentenceanalysis_id 
+                        LIMIT 2000
+                        ''', [subreddit_id, subreddit_id])
+            data = Queries.dictfetchall(cursor)
+        return data
+
+    @staticmethod
+    def networkDataset(subreddit_id):
+        with connection.cursor() as cursor:
+            cursor.execute(''' 
+                        SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
+                        INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                        INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                        WHERE asa.subreddit_id = '2f4kx6'
+                        AND ata.link_probability > 0.15 
+                        AND ata.rho > 0.15
+                        AND ata.is_active = True
+                        --AND asa.reddit_created_utc > '2020-12-01' AND asa.reddit_created_utc < '2021-01-08'
+                        GROUP BY ata.title
+                        ''', [subreddit_id])
+            data = Queries.dictfetchall(cursor)
+        return data
 
     @staticmethod
     def stats():
@@ -204,7 +248,6 @@ class Queries():
                         ''')
             data = Queries.tupleToObject(cursor)
         return data
-
 
     @staticmethod
     def unzipTuple(arr):
