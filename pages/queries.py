@@ -184,7 +184,8 @@ class Queries():
         with connection.cursor() as cursor:
             cursor.execute(''' 
                             SELECT word as name, Count(*) as weight 
-                            FROM (SELECT unnest(words) as word FROM analyser_sentenceanalysis WHERE subreddit_id = '{subredditId}' GROUP BY words) AS wordtable
+                            FROM (SELECT unnest(words) as word FROM analyser_sentenceanalysis 
+                            WHERE subreddit_id = '{subredditId}' GROUP BY words) AS wordtable
                             GROUP BY word
                             HAVING count(*) > 10
                             ORDER BY Count(*) DESC

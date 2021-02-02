@@ -97,7 +97,6 @@ async function runWordCloud() {
                 renderEmptyWarning('#container-entitycloud-error')
                 return;
             }
-            console.log(body);
 
             var wordCloudData = body.data.wordCloud;
             var entityCloudData = body.data.entityCloud;
@@ -141,7 +140,7 @@ async function runBubble() {
     await fetch(requestBase('/api/ajax/bubble/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
         .then((body) => {
-            if (!body || !body.data || !body.data.bubble500polarity || !body.data.bar30labels || !body.data.bubble500counts || !body.data.bubble500labels) {
+            if (!body || !body.data || !body.data.bubble500polarity || !body.data.bubble500counts || !body.data.bubble500labels) {
                 renderEmptyWarning('#packed-bubbles')
                 return;
             }
