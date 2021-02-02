@@ -167,7 +167,7 @@ class Queries():
                             FROM analyser_sentenceanalysis AS asa 
                             INNER JOIN analyser_tagmesentenceanalysis AS atsa ON atsa.sentenceanalysis_id = asa.id 
                             INNER JOIN analyser_tagmeanalysis AS ata ON atsa.tagmeanalysis_id = ata.id 
-                            WHERE asa.comment_id = {commentId} 
+                            WHERE asa.comment_id = '{commentId}' 
                             AND ata.link_probability > {probability} 
                             AND ata.rho > {rho}
                             AND ata.is_active = True
