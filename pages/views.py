@@ -1,10 +1,10 @@
 import json
+import pprint
 from django.views.generic import TemplateView, View, DetailView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
-import pprint
 from .forms import DashboardSearchForm
 from django.http import JsonResponse
 from django_q.tasks import async_task
@@ -19,11 +19,19 @@ class HomePageView(TemplateView):
 class AboutPageView(TemplateView):
     template_name = 'pages/about.html'
 
+class SearchAnalysisPageView(TemplateView):
+    template_name = 'pages/search-analysis.html' 
+
+    def get(self, request, *args, **kwargs):
+        if request.method == 'GET':
+            query =request.GET['query'] # => [137]
+        return render(request, self.template_name, {'searchText': query})
+
 class AnalysisPageView(DetailView):
     template_name = 'pages/analysis.html'
     model = Subreddit
     subreddit_detail_cache_key = 'cache.subreddit-{0}-detail'
-    subreddit_detail_cache_time = 10 # 1*60*60*3 # 3 saat
+    subreddit_detail_cache_time = 1*60*60*3 # 3 saat
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -31,7 +39,6 @@ class AnalysisPageView(DetailView):
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        # sol taraftaki bilgiler
         data = super().get_context_data(**kwargs)
         if cache.get(self.subreddit_detail_cache_key) is None: 
 
@@ -63,7 +70,7 @@ class DashboardPageView(TemplateView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         if cache.get(self.top5submissions_cache_key) is None: 
-            top5subredditsSubmissions =  Subreddit.objects.raw('SELECT s.id, s.display_name, (SELECT Count(*) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(*) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT 5)')
+            top5subredditsSubmissions =  Queries.getMostCrawledSubreddits(10)
             cache.set(self.top5submissions_cache_key, top5subredditsSubmissions, self.top5submissions_cache_time)
         else: 
             top5subredditsSubmissions = cache.get(self.top5submissions_cache_key)
@@ -75,10 +82,8 @@ class DashboardPageView(TemplateView):
             form = DashboardSearchForm(request.POST)
             if form.is_valid():
                 searchText = form.cleaned_data['searchText']
-                print('searchText:' + searchText)
- 
+                return redirect('/dashboard/search-analysis'  + '?query=' + searchText)
         return render(request, self.template_name)
- 
 
 class StatsPageView(TemplateView):
     template_name = 'pages/stats.html'
@@ -126,16 +131,3 @@ class StatsPageView(TemplateView):
 
         data['db_counts'] = counts
         return data
-
-    # @staticmethod
-    # def post(request):
-    #     print(request)
-    #     return super().dispatch()
-    #
-    # def form_valid(self, form):
-    #     # This method is called when valid form data has been POSTed.
-    #     # It should return an HttpResponse.
-    #     print(len(form))
-    #     form.send_email()
-    #     return super().form_valid(form)
-    #

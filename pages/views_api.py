@@ -256,3 +256,31 @@ class DataNetwork(View):
                 data = cache.get(self.cache_key)
 
         return JsonResponse({"success":True, "data": data}, status=200)
+
+
+class DataNetworkSearch(View):
+    template_name = None
+    cache_key = 'cache.data-network-search-analysis-{0}'
+    cache_time = 1*60*60*3 
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if self.request.method == "POST" and self.request.is_ajax():
+            self.cache_key = self.cache_key.format(hashlib.md5(self.request.body).hexdigest())
+            data = {}
+            if cache.get(self.cache_key) is None: 
+                network = Queries.networkSearch(self.request.body)
+                networkDataset = Queries.networkSearchDataset(self.request.body)
+                data['network'] = network
+                data['networkDataset'] = networkDataset
+                cache.set(self.cache_key, data, self.cache_time)
+            else: 
+                data = cache.get(self.cache_key)
+
+        return JsonResponse({"success":True, "data": data}, status=200)
+
+
+

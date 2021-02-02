@@ -1,24 +1,15 @@
 if (parseInt(getSubredditId())) {
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
-    var startDateVal = getQueryVariable('startDate') || "01.01.2020";
-    var endDateVal = getQueryVariable('endDate') || dd + '.' + mm + '.' + yyyy;
-    var probabilityVal = getQueryVariable('probability') || "15";
-    var rhoVal = getQueryVariable('rho') || "15";
-    startDateElement.value = startDateVal;
-    endDateElement.value = endDateVal;
-    probabilityElement.value = probabilityVal;
-    rhoElement.value = rhoVal;
-    probabilityValElement.innerText =(probabilityVal / 100).toString();
-    rhoValElement.innerText = (rhoVal / 100).toString();
-    postMethod.body = JSON.stringify({startDate: startDateVal, endDate: endDateVal, probability: (probabilityVal/100).toString(), rho: (rhoVal/100).toString()})
+    postMethod.body = JSON.stringify({query: '', startDate: startDateVal, endDate: endDateVal, probability: (probabilityVal/100).toString(), rho: (rhoVal/100).toString()})
     runTabular();
     runBar();
     runWordCloud();
     runBubble();
     runNetwork();
+}
+
+if (getSearchText()) {
+    postMethod.body = JSON.stringify({query: getSearchText(), startDate: startDateVal, endDate: endDateVal, probability: (probabilityVal/100).toString(), rho: (rhoVal/100).toString()})
+    runNetworkSearch();
 }
 
 // TABULAR DATA
@@ -217,106 +208,116 @@ async function runBubble() {
 }
 
 // NETWORK
+async function runNetworkSearch() {
+    await fetch(requestBase('/api/ajax/network-search/'), postMethod)
+        .then((res) => responseToJson(res))
+        .then((body) => drawNetwork(body))
+        .finally((_) => removeOverlay('network'));
+}
+
+// NETWORK
 async function runNetwork() {
     await fetch(requestBase('/api/ajax/network/' + getSubredditId() + '/'), postMethod)
         .then((res) => responseToJson(res))
-        .then((body) => {
-            if (!body || !body.data || body.data.network.length == 0 || body.data.networkDataset.length == 0){
-                renderEmptyWarning('#container-network-chart-error')
-                return;
-            }
-            var networkData = body.data.network;
-            var dataset = body.data.networkDataset;
-
-            var groupedNetworkData = networkData.reduce(function (r, a) {
-                r[a.group_id] = r[a.group_id] || [];
-                r[a.group_id].push(a.id);
-                delete a.group_id;
-                return r;
-            }, Object.create(null));
-
-            const groupedNetworkDataValues = Object.values(groupedNetworkData);
-            const linkedData = groupedNetworkDataValues.map((ids) => linkify(ids));
-            const filteredLinkedData = linkedData.filter((el) => el.length > 0);
-            var edgesData = filteredLinkedData.flat();
-
-            for (let i = 0; i < edgesData.length; i++) {
-                const from = edgesData[i].from;
-                const to = edgesData[i].to;
-                var a = edgesData.filter((q) => q.from == from && q.to == to);
-                edgesData[i].value = a.length;
-                edgesData[i].title = `${a.length} occurences`;
-            }
-
-            edgesData = edgesData.filter((v, i, a) => a.findIndex((t) => t.from === v.from && t.to === v.to) === i);
-            edgesData = edgesData.filter((el) => el.from != el.to); // Self targetting
-            edgesData = edgesData.filter((el) => el.value > 2); // Min occurences
-
-            arr = [];
-            edgesData.forEach((el) => {
-                if (arr.findIndex((x) => x.from == el.to && x.to == el.from) == -1) {
-                    arr.push(el);
-                }
-            });
-
-            edgesData = arr;
-            var onlyIds = edgesData.map((el) => el.from);
-            onlyIds.push(...edgesData.map((el) => el.to));
-            let uniqueIds = [...new Set(onlyIds)];
-            dataset = dataset.filter((el) => uniqueIds.includes(el.id));
-
-            // create an array with nodes
-            var nodes = new vis.DataSet(dataset);
-            // create an array with edges
-            var edges = new vis.DataSet(edgesData);
-
-            // create a network
-            var container = document.getElementById('container-network-chart');
-            var data = {
-                nodes: nodes,
-                edges: edges,
-            };
-
-            var options = {
-                nodes: {
-                    shape: 'dot',
-                },
-                physics: {
-                    barnesHut: {
-                        gravitationalConstant: -29100,
-                        centralGravity: 0.85,
-                        springLength: 55,
-                        springConstant: 0.235,
-                        damping: 0.48,
-                        avoidOverlap: 1,
-                    },
-                    maxVelocity: 47,
-                    minVelocity: 0.75,
-                    solver: 'barnesHut',
-                },
-                edges: {
-                    font: {
-                        align: 'top',
-                    },
-                    smooth: {
-                        type: 'dynamic',
-                        forceDirection: 'horizontal',
-                        roundness: 0.0,
-                    },
-                },
-                layout: {
-                    improvedLayout: false,
-                },
-            };
-            network = new vis.Network(container, data, options);
-            network.on('stabilizationIterationsDone', function (params) {
-                network.stopSimulation();
-                network.setOptions({ physics: false });
-            });
-
-            network.stabilize(500);
-        })
+        .then((body) => drawNetwork(body))
         .finally((_) => removeOverlay('network'));
+}
+
+function drawNetwork(body){
+    if (!body || !body.data || body.data.network.length == 0 || body.data.networkDataset.length == 0){
+        renderEmptyWarning('#container-network-chart-error')
+        return;
+    }
+    var networkData = body.data.network;
+    var dataset = body.data.networkDataset;
+
+    var groupedNetworkData = networkData.reduce(function (r, a) {
+        r[a.group_id] = r[a.group_id] || [];
+        r[a.group_id].push(a.id);
+        delete a.group_id;
+        return r;
+    }, Object.create(null));
+
+    const groupedNetworkDataValues = Object.values(groupedNetworkData);
+    const linkedData = groupedNetworkDataValues.map((ids) => linkify(ids));
+    const filteredLinkedData = linkedData.filter((el) => el.length > 0);
+    var edgesData = filteredLinkedData.flat();
+
+    for (let i = 0; i < edgesData.length; i++) {
+        const from = edgesData[i].from;
+        const to = edgesData[i].to;
+        var a = edgesData.filter((q) => q.from == from && q.to == to);
+        edgesData[i].value = a.length;
+        edgesData[i].title = `${a.length} occurences`;
+    }
+
+    edgesData = edgesData.filter((v, i, a) => a.findIndex((t) => t.from === v.from && t.to === v.to) === i);
+    edgesData = edgesData.filter((el) => el.from != el.to); // Self targetting
+    edgesData = edgesData.filter((el) => el.value > 4); // Min occurences
+
+    arr = [];
+    edgesData.forEach((el) => {
+        if (arr.findIndex((x) => x.from == el.to && x.to == el.from) == -1) {
+            arr.push(el);
+        }
+    });
+
+    edgesData = arr;
+    var onlyIds = edgesData.map((el) => el.from);
+    onlyIds.push(...edgesData.map((el) => el.to));
+    let uniqueIds = [...new Set(onlyIds)];
+    dataset = dataset.filter((el) => uniqueIds.includes(el.id));
+
+    // create an array with nodes
+    var nodes = new vis.DataSet(dataset);
+    // create an array with edges
+    var edges = new vis.DataSet(edgesData);
+
+    // create a network
+    var container = document.getElementById('container-network-chart');
+    var data = {
+        nodes: nodes,
+        edges: edges,
+    };
+
+    var options = {
+        nodes: {
+            shape: 'dot',
+        },
+        physics: {
+            barnesHut: {
+                gravitationalConstant: -29100,
+                centralGravity: 0.85,
+                springLength: 55,
+                springConstant: 0.235,
+                damping: 0.48,
+                avoidOverlap: 1,
+            },
+            maxVelocity: 47,
+            minVelocity: 0.75,
+            solver: 'barnesHut',
+        },
+        edges: {
+            font: {
+                align: 'top',
+            },
+            smooth: {
+                type: 'dynamic',
+                forceDirection: 'horizontal',
+                roundness: 0.0,
+            },
+        },
+        layout: {
+            improvedLayout: false,
+        },
+    };
+    network = new vis.Network(container, data, options);
+    network.on('stabilizationIterationsDone', function (params) {
+        network.stopSimulation();
+        network.setOptions({ physics: false });
+    });
+
+    network.stabilize(500);
 }
 
 function removeOverlay(id) {

@@ -76,7 +76,7 @@ class AnalyserService:
 
             sentenceAnalysis.is_analized = True
             sentenceAnalysis.save()
-            print("saved =>", sentenceAnalysis.submission_id)
+            print("saved =>", sentenceAnalysis.id)
         except Exception as e:
             print("Oops [tagme_analysis_sentences]!  Try again..." + str(e))
 

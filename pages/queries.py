@@ -2,20 +2,27 @@
 from django.db import connection
 from collections import namedtuple
 from datetime import datetime
+from scraper.models import Subreddit
 import json
 class Params:
-  def __init__(self, startDate, endDate, probability, rho):
+  def __init__(self, startDate, endDate, probability, rho, query):
     self.startDate = datetime.strptime(startDate,'%d.%m.%Y').strftime("%m-%d-%Y") 
     self.endDate = datetime.strptime(endDate,'%d.%m.%Y').strftime("%m-%d-%Y") 
     self.probability = probability
     self.rho = rho
+    self.query = query
 
 class Queries():
     @staticmethod
     def parseParameters(args):
         q = json.loads(args)
-        p = Params(q["startDate"], q["endDate"], q["probability"], q["rho"])
+        p = Params(q["startDate"], q["endDate"], q["probability"], q["rho"], q["query"])
         return p
+
+    @staticmethod
+    def getMostCrawledSubreddits(limit):
+        return Subreddit.objects.raw('SELECT s.id, s.display_name, (SELECT Count(*) FROM scraper_submission WHERE subreddit_id = s.id) as submissions_count, (SELECT Count(*) FROM scraper_comments WHERE subreddit_id = s.id) as comments_count  FROM scraper_subreddit s WHERE id in (SELECT sc.subreddit_id FROM scraper_submission sc GROUP BY sc.subreddit_id ORDER BY sc.count DESC LIMIT %s)', [limit])
+
 
     @staticmethod
     def bar30(subreddit_id, args):
@@ -264,6 +271,55 @@ class Queries():
                     '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
+
+
+    @staticmethod
+    def networkSearch(args):
+        params = Queries.parseParameters(args)
+        with connection.cursor() as cursor: 
+            cursor.execute(''' 
+                        SELECT atsa.sentenceanalysis_id AS group_id, cte.id AS id FROM analyser_tagmesentenceanalysis AS atsa
+                        INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                        INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                        INNER JOIN (
+                        SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
+                            INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                            INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                            WHERE asa.text LIKE '%{searchText}%'
+                            AND ata.link_probability > {probability} 
+                            AND ata.rho > {rho}
+                            AND ata.is_active = True
+                            AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
+                            GROUP BY ata.title
+                        ) AS cte ON  cte.label = ata.title
+                        WHERE asa.text LIKE '%{searchText}%'
+                        AND ata.link_probability > {probability} 
+                        AND ata.rho > {rho}
+                        AND ata.is_active = True
+                        ORDER BY atsa.sentenceanalysis_id ASC
+                    '''.format(startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho, searchText=params.query))
+            data = Queries.dictfetchall(cursor)
+        return data
+
+    @staticmethod
+    def networkSearchDataset(args):
+        params = Queries.parseParameters(args)
+        print(params)
+        with connection.cursor() as cursor:
+            cursor.execute(''' 
+                        SELECT row_number() over () as id, ata.title as label FROM analyser_tagmesentenceanalysis AS atsa
+                        INNER JOIN analyser_sentenceanalysis AS asa ON asa.id = atsa.sentenceanalysis_id
+                        INNER JOIN analyser_tagmeanalysis AS ata ON ata.id = atsa.tagmeanalysis_id
+                        WHERE asa.text LIKE '%{searchText}%'
+                        AND ata.link_probability > {probability} 
+                        AND ata.rho > {rho}
+                        AND ata.is_active = True
+                        AND asa.reddit_created_utc > '{startDate}' AND asa.reddit_created_utc < '{endDate}'
+                        GROUP BY ata.title
+                    '''.format(startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho, searchText=params.query))
+            data = Queries.dictfetchall(cursor)
+        return data
+						
 
     @staticmethod
     def stats():

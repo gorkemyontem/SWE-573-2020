@@ -1,16 +1,9 @@
-var startDateElement = document.getElementById('startDate');
-var endDateElement = document.getElementById('endDate');
-var probabilityElement = document.getElementById('probability');
-var rhoElement = document.getElementById('rho');
-var probabilityValElement = document.getElementById('probability-val');
-var rhoValElement = document.getElementById('rho-val');
 
-probabilityElement.addEventListener('input', (event) => {
-    probabilityValElement.innerText = new Number(event.target.value / 100);
-});
-rhoElement.addEventListener('input', (event) => {
-    rhoValElement.innerText = new Number(event.target.value / 100);
-});
+
+function onFormSubmit(e) {
+    e.preventDefault();
+    reloadWithQueryStringVars({ startDate: startDateElement.value, endDate: endDateElement.value, probability: probabilityElement.value, rho: rhoElement.value });
+}
 
 
 var render = (template, selector) => {
@@ -24,7 +17,6 @@ var renderEmptyWarning = (selector) => {
     if (!node) return;
     node.innerHTML = 'Sorry, there is no data to show. You may play with the filters until you got it right!';
 };
-
 
 var mediaTemplate = (mediaArr) => {
     templates = mediaArr.map(
@@ -68,7 +60,8 @@ var mediaTemplate = (mediaArr) => {
 
                         </div>
                     </div>
-                </li>`);
+                </li>`
+    );
     return `<ul class="list-unstyled">${templates.join('')}</ul>`;
 };
 
@@ -224,24 +217,23 @@ var fetchData = (type, id) =>
                 return body.data.sentenceAnalysis;
             }
         });
-        
+
 $('#startDate').datepicker({
     uiLibrary: 'bootstrap4',
-    format: 'dd.mm.yyyy', 
+    format: 'dd.mm.yyyy',
     iconsLibrary: 'fontawesome',
     maxDate: function () {
         return $('#endDate').val();
-    }
+    },
 });
 $('#endDate').datepicker({
     uiLibrary: 'bootstrap4',
-    format: 'dd.mm.yyyy', 
+    format: 'dd.mm.yyyy',
     iconsLibrary: 'fontawesome',
     minDate: function () {
         return $('#startDate').val();
-    }
+    },
 });
-
 
 function getQueryVariable(variable) {
     var query = window.location.search.substring(1);
@@ -255,38 +247,64 @@ function getQueryVariable(variable) {
     console.log('Query variable %s not found', variable);
 }
 
-function reloadWithQueryStringVars (queryStringVars) {
-    var existingQueryVars = location.search ? location.search.substring(1).split("&") : [],
-        currentUrl = location.search ? location.href.replace(location.search,"") : location.href,
+function reloadWithQueryStringVars(queryStringVars) {
+    var existingQueryVars = location.search ? location.search.substring(1).split('&') : [],
+        currentUrl = location.search ? location.href.replace(location.search, '') : location.href,
         newQueryVars = {},
-        newUrl = currentUrl + "?";
+        newUrl = currentUrl + '?';
 
-    if(existingQueryVars.length > 0) {
+    if (existingQueryVars.length > 0) {
         for (var i = 0; i < existingQueryVars.length; i++) {
-            var pair = existingQueryVars[i].split("=");
+            var pair = existingQueryVars[i].split('=');
             newQueryVars[pair[0]] = pair[1];
         }
     }
 
-    if(queryStringVars) {
+    if (queryStringVars) {
         for (var queryStringVar in queryStringVars) {
             newQueryVars[queryStringVar] = queryStringVars[queryStringVar];
         }
     }
 
-    if(newQueryVars) { 
+    if (newQueryVars) {
         for (var newQueryVar in newQueryVars) {
-            newUrl += newQueryVar + "=" + newQueryVars[newQueryVar] + "&";
+            newUrl += newQueryVar + '=' + newQueryVars[newQueryVar] + '&';
         }
-        newUrl = newUrl.substring(0, newUrl.length-1);
+        newUrl = newUrl.substring(0, newUrl.length - 1);
         window.location.href = newUrl;
     } else {
         window.location.href = location.href;
     }
 }
+if (document.getElementById('filter-form')) {
+    var startDateElement = document.getElementById('startDate');
+    var endDateElement = document.getElementById('endDate');
+    var probabilityElement = document.getElementById('probability');
+    var rhoElement = document.getElementById('rho');
+    var probabilityValElement = document.getElementById('probability-val');
+    var rhoValElement = document.getElementById('rho-val');
 
-function onFormSubmit(e) {
-    e.preventDefault();
-    reloadWithQueryStringVars({ startDate: startDateElement.value, endDate: endDateElement.value, probability: probabilityElement.value, rho: rhoElement.value });
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = today.getFullYear();
+    var startDateVal = getQueryVariable('startDate') || '01.01.2020';
+    var endDateVal = getQueryVariable('endDate') || dd + '.' + mm + '.' + yyyy;
+    var probabilityVal = getQueryVariable('probability') || '15';
+    var rhoVal = getQueryVariable('rho') || '15';
+
+    startDateElement.value = startDateVal;
+    endDateElement.value = endDateVal;
+    probabilityElement.value = probabilityVal;
+    rhoElement.value = rhoVal;
+    probabilityValElement.innerText = (probabilityVal / 100).toString();
+    rhoValElement.innerText = (rhoVal / 100).toString();
+
+    probabilityElement.addEventListener('input', (event) => {
+        probabilityValElement.innerText = new Number(event.target.value / 100);
+    });
+    rhoElement.addEventListener('input', (event) => {
+        rhoValElement.innerText = new Number(event.target.value / 100);
+    });
+
 }
-

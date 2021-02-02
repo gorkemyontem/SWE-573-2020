@@ -23,6 +23,11 @@ var getSubredditId = () => {
     return lastSegment;
 };
 
+var getSearchText = () => {
+    searchTextElement = document.getElementById('search-text');
+    return searchTextElement ? searchTextElement.innerText : null;
+};
+
 var globalColors = [
     '#FF0000',
     '#FF0a00',

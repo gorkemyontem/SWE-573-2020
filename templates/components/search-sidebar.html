@@ -1,0 +1,9 @@
+{% load static %}
+<div class="col-md-12 col-lg-2 mg-t-20 mg-lg-t-0">
+    <div class="card">
+        <img src="{% static 'images/reddit-logo.jpg' %}" class="card-img-top" alt="{{ object.name }}">
+        <div class="card-body">
+            <h5 class="card-title">Search Text: <span id="search-text">{{ searchText }}</span></h5>
+        </div>
+    </div>
+</div>

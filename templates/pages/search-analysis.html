@@ -1,0 +1,33 @@
+{% extends '_base.html' %}
+{% load static %}
+
+{% block title %}Home page{% endblock title %}
+
+{% block content-fluid %}
+{% csrf_token %}
+
+<div class="row">
+
+    {% block section1 %}
+        {% include 'components/search-sidebar.html' %}
+    {% endblock %}
+    <div class="col-md-12 col-lg-10 mg-t-20 mg-lg-t-0">
+        {% block section2 %}
+            {% include 'components/filter.html' %}
+        {% endblock %}
+        <div class="sect">
+            <div class="sa-overlay-wrapper">
+                <div class="sa-overlay" id="overlay-network">
+                    <div class="spinner-border"></div>
+                </div>
+                <div class="az-content-label mg-b-5">Network Graph</div>
+                <p class="mg-b-20">Links between <strong>Entities</strong></p>
+                <div id="container-network-chart-error"></div>
+                <div id="container-network-chart"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock content-fluid %}
