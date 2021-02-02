@@ -86,7 +86,7 @@ class DashboardPageView(TemplateView):
         return render(request, self.template_name)
 
 class StatsPageView(TemplateView):
-    template_name = 'pages/stats.html'
+    template_name = 'pages/stats.html' 
     db_counts_cache_key = 'cache.dbcounts'
     db_counts_cache_time = 1*60*60*3 # 3 saat
 
