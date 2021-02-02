@@ -42,13 +42,13 @@ class AnalysisPageView(DetailView):
         data = super().get_context_data(**kwargs)
         if cache.get(self.subreddit_detail_cache_key) is None: 
 
-            submissions = Submission.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
-            comments = Comments.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
-
-            additional_context = { 
-                "submissionCount" : submissions,
-                "commentCount" : comments,
-            }
+            # submissions = Submission.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
+            # comments = Comments.objects.all().filter(subreddit=self.kwargs.get('pk')).count()
+            additional_context = {}
+            # additional_context = { 
+            #     "submissionCount" : submissions,
+            #     "commentCount" : comments,
+            # }
 
             cache.set(self.subreddit_detail_cache_key, additional_context, self.subreddit_detail_cache_time)
         else: 
