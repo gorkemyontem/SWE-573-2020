@@ -252,7 +252,7 @@ function drawNetwork(body){
 
     edgesData = edgesData.filter((v, i, a) => a.findIndex((t) => t.from === v.from && t.to === v.to) === i);
     edgesData = edgesData.filter((el) => el.from != el.to); // Self targetting
-    edgesData = edgesData.filter((el) => el.value > 4); // Min occurences
+    edgesData = edgesData.filter((el) => el.value > 3); // Min occurences
 
     arr = [];
     edgesData.forEach((el) => {

@@ -250,6 +250,7 @@ class Queries():
                         AND ata.rho > {rho}
                         AND ata.is_active = True
                         ORDER BY atsa.sentenceanalysis_id ASC
+                        LIMIT 10000
                     '''.format(subredditId=subreddit_id, startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho))
             data = Queries.dictfetchall(cursor)
         return data
@@ -298,6 +299,7 @@ class Queries():
                         AND ata.rho > {rho}
                         AND ata.is_active = True
                         ORDER BY atsa.sentenceanalysis_id ASC
+                        LIMIT 10000
                     '''.format(startDate=params.startDate, endDate=params.endDate, probability=params.probability, rho=params.rho, searchText=params.query))
             data = Queries.dictfetchall(cursor)
         return data

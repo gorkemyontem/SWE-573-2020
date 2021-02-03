@@ -13,19 +13,6 @@ from django.contrib.auth import get_user_model
 import datetime
 import pprint
 import json
-#    import json
-# from django.views.generic import TemplateView, View, DetailView
-# from django.contrib.auth.decorators import login_required
-# from django.utils.decorators import method_decorator
-# from django.shortcuts import render
-# from django.http import HttpResponseRedirect
-# import pprint
-# from .forms import DashboardSearchForm
-# from django.http import JsonResponse
-# from django_q.tasks import async_task
-# from django.core.cache import cache
-# from scraper.models import Subreddit, Submission, AuthorRedditor, Comments
-# from analyser.models import SentenceAnalysis, SubmissionAnalysis, CommentAnalysis
 
 class TestAnalysisPageView(TestCase):
 
