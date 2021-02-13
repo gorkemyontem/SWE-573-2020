@@ -26,9 +26,27 @@ deploy:
       script: 
         - docker-compose push
         - echo "PING"
-    - provider: heroku
-      app: $HEROKU_APP
-      api_key: $HEROKU_API_KEY
-      on:
-        all_branches: true
+    - provider: s3
+        access_key_id: $AWS_ACCESS_KEY
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        local_dir: dpl_cd_upload
+        skip_cleanup: true
+        repo: gorkemyontem/SWE-573-2020
+        bucket: sentiment-analyser-bucket
+    - provider: codedeploy
+        access_key_id: $AWS_ACCESS_KEY
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        bucket: sentiment-analyser-bucket
+        key: latest.zip
+        bundle_type: zip
+        application: MyApp
+        deployment_group: sentiment_analyser_deployment_group
+        region: eu-central-1
+        on:
+            all_branches: true
+    # - provider: heroku
+    #   app: $HEROKU_APP
+    #   api_key: $HEROKU_API_KEY
+    #   on:
+    #     all_branches: true
 
