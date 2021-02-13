@@ -1,0 +1,119 @@
+SELECT * FROM (
+SELECT tagmeanalysis_id, COUNT(tagmeanalysis_id) FROM analyser_tagmesentenceanalysis GROUP BY tagmeanalysis_id  ORDER BY  COUNT(tagmeanalysis_id) DESC LIMIT 500
+) as aaa INNER JOIN analyser_tagmeanalysis ON id = tagmeanalysis_id WHERE is_active = True
+
+SELECT * FROM analyser_tagmeanalysis WHERE title = 'Monopoly (game)' OR title = 'Everyone (Skins series 1)' or title = 'Why? (American band)'
+UPDATE analyser_tagmeanalysis SET is_active = False WHERE spot = 'we'
+UPDATE analyser_tagmeanalysis SET is_active = False WHERE id in (SELECT id FROM analyser_tagmeanalysis 
+WHERE spot = 'US')
+			
+
+
+SELECT MIN(created_utc), body FROM public.scraper_comments group by created_utc, body
+
+
+SELECT id, comment_id, submission_id FROM public.analyser_commentanalysis WHERE comment_id = 'gitmcaw';
+SELECT id, comment_id, submission_id, polarity, subjectivity, classification, reddit_created_utc, text_type FROM public.analyser_sentenceanalysis WHERE subreddit_id = '2f4kx6' AND is_analized = True;
+-- BURAYA TAGME EKLE
+
+SELECT count(id) FROM public.scraper_comments WHERE is_analized = false;
+	
+
+-- DELETING SHOR SENTENCES
+-- SELECT count(l.id)
+-- FROM analyser_sentenceanalysis l
+-- WHERE length(text) < 12
+-- DELETE FROM analyser_sentenceanalysis WHERE length(text) < 12
+-- -- ERROR:  update or delete on table "analyser_sentenceanalysis" violates foreign key constraint "analyser_tagmesenten_sentenceanalysis_id_75400f01_fk_analyser_" on table "analyser_tagmesentenceanalysis"
+-- SELECT * FROM analyser_sentenceanalysis WHERE id = 136462
+-- SELECT * FROM analyser_tagmesentenceanalysis WHERE sentenceanalysis_id = 136462
+
+
+--  SENTENCE is analized but not tagmesentence
+-- SELECT l.id, l.*
+-- FROM analyser_sentenceanalysis l
+-- LEFT OUTER JOIN
+--         analyser_tagmesentenceanalysis r
+-- ON      r.sentenceanalysis_id = l.id
+-- WHERE   l.is_analized = true and  r.id IS NULL
+
+	
+SELECT
+  comment_id,
+  count(*)
+FROM scraper_comments
+GROUP BY
+  comment_id
+HAVING count(*) > 1;
+
+
+
+SELECT
+  spot,
+  title,
+  count(*)
+FROM analyser_tagmeanalysis
+GROUP BY
+  spot,
+  title
+HAVING count(*) > 1;
+
+SELECT * FROM
+  (SELECT *, count(*)
+  OVER
+    (PARTITION BY
+     spot,
+  title
+    ) AS count
+  FROM analyser_tagmeanalysis) tableWithCount
+  WHERE tableWithCount.count > 1 ORDER BY id;
+
+
+SELECT id, spot, title FROM
+  (SELECT id, spot, title, 
+     ROW_NUMBER() OVER 
+(PARTITION BY (spot, title) ORDER BY id DESC) rn
+   FROM analyser_tagmeanalysis
+  ) tmp WHERE rn = 1;
+  
+  
+    
+  DELETE FROM analyser_tagmesentenceanalysis WHERE tagmeanalysis_id not in  ( SELECT id FROM (
+    SELECT DISTINCT ON (spot, title) *
+  FROM analyser_tagmeanalysis) as tg)
+  
+  
+  DELETE FROM analyser_tagmeanalysis WHERE id not in  ( SELECT id FROM (
+    SELECT DISTINCT ON (spot, title) *
+  FROM analyser_tagmeanalysis) as tg)
+  
+	
+SELECT
+  submission_id,
+  count(*)
+FROM analyser_submissionanalysis
+GROUP BY
+  submission_id
+HAVING count(*) > 1;
+
+a
+
+ -- PERFORMANT DUPLICATE MANAGEMENT
+  WITH ranked AS (
+  SELECT m.*, ROW_NUMBER() OVER (PARTITION BY title ORDER BY id DESC) AS rn
+  FROM (
+  SELECT * FROM
+  (SELECT *, count(*)
+  OVER
+    (PARTITION BY
+     spot,
+  title
+    ) AS count
+  FROM analyser_tagmeanalysis) tableWithCount
+  WHERE tableWithCount.count > 1 ORDER BY id
+  ) AS m
+)
+
+  --DELETE FROM analyser_tagmesentenceanalysis WHERE tagmeanalysis_id in  (SELECT id FROM ranked WHERE rn = 1)
+  DELETE FROM analyser_tagmeanalysis WHERE id in (SELECT id FROM ranked WHERE rn = 1)
+ 
