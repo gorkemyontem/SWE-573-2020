@@ -47,7 +47,9 @@ deploy:
       application: sentiment_analyser
       deployment_group: sentiment_analyser_deployment_group
       region: eu-central-1
-      on: *2
+      on: &2
+    #   on:
+    #     all_branches: true
     # - provider: heroku
     #   app: $HEROKU_APP
     #   api_key: $HEROKU_API_KEY
